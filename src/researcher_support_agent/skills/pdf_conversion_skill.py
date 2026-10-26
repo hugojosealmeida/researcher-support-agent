@@ -154,7 +154,10 @@ def convert_pdf(
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, filename)
     else:
-        output_path = filename
+        # Default to writing next to the source PDF so we do not pollute
+        # the current working directory (e.g. the repository root) with
+        # generated artifacts.
+        output_path = str(path.parent / filename)
 
     warnings: List[ExtractionWarning] = []
     extraction_failures = False

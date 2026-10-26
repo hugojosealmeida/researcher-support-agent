@@ -15,11 +15,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from ..models.evidence import EvidencePointer, ResearchNote
+from ..models.evidence import ResearchNote
 from ..models.paper import Paper
 
 
@@ -291,14 +290,74 @@ class LiteratureSynthesisAgent:
                 paper_ids.append(note.paper_id)
         return paper_ids[:min(len(paper_ids), 10)]  # Limit to 10
 
+    # Opposing term pairs used to detect genuinely conflicting results.
+    _CONTRADICTION_PAIRS = (
+        ("increase", "decrease"),
+        ("increased", "decreased"),
+        ("positive", "negative"),
+        ("significant", "not significant"),
+        ("significant", "no significant"),
+        ("effective", "ineffective"),
+        ("improves", "worsens"),
+        ("improves", "does not improve"),
+        ("improved", "worsened"),
+        ("higher", "lower"),
+        ("benefit", "harm"),
+        ("beneficial", "harmful"),
+        ("success", "failure"),
+        ("effective", "no effect"),
+        ("effect", "no effect"),
+        ("found", "not found"),
+        ("present", "absent"),
+    )
+
+    def _results_conflict(self, result_a: str, result_b: str) -> bool:
+        """Determine whether two result statements genuinely conflict.
+
+        Requires an actual conflict in the reported results (opposing
+        polarity, asymmetric negation, or very low lexical overlap) rather
+        than merely differing methodology labels.
+        """
+        a = result_a.strip().lower()
+        b = result_b.strip().lower()
+        if not a or not b or a == b:
+            return False
+        if a == "unknown" or b == "unknown":
+            return False
+
+        # Opposing polarity terms.
+        for x, y in self._CONTRADICTION_PAIRS:
+            if (x in a and y in b) or (y in a and x in b):
+                return True
+
+        # Asymmetric negation: one result negates a shared substantive term.
+        negators = ("not ", "no ", "none ", "never ", "without ")
+        a_neg = any(n in a for n in negators)
+        b_neg = any(n in b for n in negators)
+        if a_neg != b_neg:
+            # Only treat as conflict if they share meaningful content words.
+            words_a = {w for w in a.split() if len(w) > 3}
+            words_b = {w for w in b.split() if len(w) > 3}
+            if words_a and words_b and (words_a & words_b):
+                return True
+
+        # Very low lexical overlap -> substantively different findings.
+        words_a = {w for w in a.split() if len(w) > 3}
+        words_b = {w for w in b.split() if len(w) > 3}
+        if words_a and words_b:
+            union = words_a | words_b
+            intersection = words_a & words_b
+            if len(union) > 0 and (len(intersection) / len(union)) < 0.2:
+                return True
+
+        return False
+
     def _find_contradictions(
         self, notes: list[ResearchNote]
     ) -> list[tuple[str, list[str], list[str]]]:
-        """Find pairs of papers with conflicting main results."""
+        """Find pairs of papers with genuinely conflicting main results."""
         contradictions: list[tuple[str, list[str], list[str]]] = []
 
-        # Simple contradiction detection: compare results of papers
-        # with different methodologies or data sources
         for i, note_a in enumerate(notes):
             for j, note_b in enumerate(notes):
                 if i >= j:
@@ -306,12 +365,12 @@ class LiteratureSynthesisAgent:
                 if (
                     note_a.main_results != "Unknown"
                     and note_b.main_results != "Unknown"
-                    and note_a.methodology != note_b.methodology
+                    and self._results_conflict(
+                        note_a.main_results, note_b.main_results
+                    )
                 ):
-                    # Heuristic: if methodologies differ significantly,
-                    # flag as potential contradiction
                     contradictions.append((
-                        f"Methodology difference: {note_a.methodology[:30]} vs {note_b.methodology[:30]}",
+                        f"Conflicting results: {note_a.main_results[:40]} vs {note_b.main_results[:40]}",
                         [note_a.paper_id],
                         [note_b.paper_id],
                     ))
@@ -353,16 +412,16 @@ class LiteratureSynthesisAgent:
                     max_gap = diff
                     gap_between = (years[i], years[i + 1])
 
-            if max_gap >= 3 and has_search_metadata:
+            if max_gap >= 3 and has_search:
                 gaps.append({
                     "title": f"Temporal gap between {gap_between[0]} and {gap_between[1]}",
                     "description": f"No papers found in the literature between {gap_between[0]} and {gap_between[1]}. "
                                    f"{search_scope}This gap should be verified against the full search.",
                     "supporting_paper_ids": [],
                     "confidence": 0.4,
-                    "evidence_base": search_scope if has_search_metadata else "Search evidence not provided. Cannot verify this gap claim.",
+                    "evidence_base": search_scope if has_search else "Search evidence not provided. Cannot verify this gap claim.",
                 })
-            elif max_gap >= 3 and not has_search_metadata:
+            elif max_gap >= 3 and not has_search:
                 gaps.append({
                     "title": f"Potential temporal gap between {gap_between[0]} and {gap_between[1]}",
                     "description": f"Papers found span from {years[0]} to {years[-1]}. "

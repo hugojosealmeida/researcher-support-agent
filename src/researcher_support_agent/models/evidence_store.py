@@ -148,8 +148,8 @@ class EvidenceRepository:
 
             CREATE TABLE IF NOT EXISTS citations (
                 id TEXT PRIMARY KEY,
-                citing_paper_id TEXT NOT NULL REFERENCES papers(id) ON DELETE CASCADE,
-                cited_paper_id TEXT NOT NULL REFERENCES papers(id) ON DELETE CASCADE,
+                citing_paper_id TEXT NOT NULL,
+                cited_paper_id TEXT NOT NULL,
                 context TEXT,
                 UNIQUE(citing_paper_id, cited_paper_id)
             );
