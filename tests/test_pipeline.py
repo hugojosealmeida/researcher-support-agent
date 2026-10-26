@@ -66,9 +66,7 @@ class TestPipelineRegistration:
 
 
 class TestPipelineFullWorkflow:
-    def _build_pipeline(self) -> tuple[Pipeline, Path]:
-        tmp_path = Path(__file__).parent / "tmp_pipeline_test"
-        tmp_path.mkdir(exist_ok=True)
+    def _build_pipeline(self, tmp_path: Path) -> Pipeline:
         p = Pipeline(state_file=str(tmp_path / "state.json"))
         p.register_agent(PlanningAgent(topic="Gene Therapy"))
         p.register_agent(LiteratureSearchAgent())
@@ -78,16 +76,16 @@ class TestPipelineFullWorkflow:
         p.register_agent(ReviewPaperWriterAgent())
         p.register_agent(AcademicReviewerAgent())
         p.register_agent(RevisionReleaseAgent())
-        return p, tmp_path
+        return p
 
-    def test_run_full_executes_all_phases(self) -> None:
-        p, tmp_path = self._build_pipeline()
+    def test_run_full_executes_all_phases(self, tmp_path: Path) -> None:
+        p = self._build_pipeline(tmp_path)
         result = p.run_full()
         assert result.topic == "Gene Therapy"
         assert result.completed_phases == Pipeline.VALID_PHASES
 
-    def test_run_from_executes_subset(self) -> None:
-        p, tmp_path = self._build_pipeline()
+    def test_run_from_executes_subset(self, tmp_path: Path) -> None:
+        p = self._build_pipeline(tmp_path)
 
         # First run planning only
         p.run_phase("planning")
@@ -104,8 +102,8 @@ class TestPipelineFullWorkflow:
         ]
         assert result.completed_phases == ["planning"] + remaining
 
-    def test_run_full_overrides_external_state(self) -> None:
-        p, tmp_path = self._build_pipeline()
+    def test_run_full_overrides_external_state(self, tmp_path: Path) -> None:
+        p = self._build_pipeline(tmp_path)
         ext = PipelineState()
         ext.topic = "External"
         ext.completed_phases = ["planning"]

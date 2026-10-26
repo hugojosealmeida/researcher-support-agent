@@ -18,5 +18,4 @@ class PaperSummarizationAgent(PipelineAgent):
         if self.summaries:
             state.summaries = self.summaries
 
-        state.save("pipeline_state.json")
         return state

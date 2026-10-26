@@ -201,6 +201,16 @@ class TestAcademicReviewerAgent:
         result = AcademicReviewerAgent().run(state)
         assert len(result.review_comments) == 1
 
+    def test_default_preserves_review_passed(self) -> None:
+        state = PipelineState(review_passed=True)
+        result = AcademicReviewerAgent().run(state)
+        assert result.review_passed is True
+
+    def test_default_preserves_review_comments(self) -> None:
+        state = PipelineState(review_comments=[ReviewComment(section="X", severity="minor", comment="o")])
+        result = AcademicReviewerAgent().run(state)
+        assert len(result.review_comments) == 1
+
 
 # ------------------------------------------------------------------ #
 #  RevisionReleaseAgent                                                #
@@ -229,3 +239,14 @@ class TestRevisionReleaseAgent:
         assert result.final_manuscript == "Old final"
         assert result.version == "1.0"
         assert result.published is False
+
+    def test_default_preserves_version_and_published(self) -> None:
+        state = PipelineState(
+            final_manuscript="Old final",
+            version="2.0",
+            published=True,
+        )
+        result = RevisionReleaseAgent().run(state)
+        assert result.final_manuscript == "Old final"
+        assert result.version == "2.0"
+        assert result.published is True

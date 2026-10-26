@@ -49,7 +49,7 @@ class Pipeline:
         self._agents[agent.name] = agent
 
     def _ensure_state_file(self) -> None:
-        if self._state_file and not self._state_file.startswith("None"):
+        if self._state_file is not None:
             self._state.save(self._state_file)
 
     # ---- execution ---- #
@@ -148,5 +148,7 @@ class Pipeline:
 
     def load_state(self) -> PipelineState:
         """Load state from the configured file and return it."""
+        if self._state_file is None:
+            return self._state
         self._state = PipelineState.load(self._state_file)
         return self._state

@@ -109,6 +109,14 @@ class TestPipelineStateSaveLoad:
         state.papers = [Paper(title="A", authors=[], year=2023, venue="V")]
         assert state.phase_has_data("paper_ingestion") is True
 
+    def test_phase_has_data_for_bool(self) -> None:
+        state = PipelineState()
+        assert state.phase_has_data("academic_review") is False
+        state.review_passed = True
+        assert state.phase_has_data("academic_review") is True
+        state.review_passed = False
+        assert state.phase_has_data("academic_review") is False
+
     def test_phase_order(self) -> None:
         state = PipelineState()
         order = state.get_phase_order()

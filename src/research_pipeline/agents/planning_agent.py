@@ -39,5 +39,4 @@ class PlanningAgent(PipelineAgent):
         if self.search_strategy:
             state.search_strategy = self.search_strategy
 
-        state.save("pipeline_state.json")
         return state

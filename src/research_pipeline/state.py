@@ -133,8 +133,10 @@ class PipelineState:
         p.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     @classmethod
-    def load(cls, path: str | Path = "pipeline_state.json") -> PipelineState:
+    def load(cls, path: str | Path | None = "pipeline_state.json") -> PipelineState:
         """Restore state from a JSON file."""
+        if path is None:
+            return cls()
         p = Path(path)
         if not p.exists():
             return cls()
@@ -167,7 +169,7 @@ class PipelineState:
         return any(
             getattr(self, attr)
             for attr in attrs
-            if isinstance(getattr(self, attr), (list, dict, str))
+            if isinstance(getattr(self, attr), (list, dict, str, bool))
         )
 
     def get_phase_order(self) -> list[str]:

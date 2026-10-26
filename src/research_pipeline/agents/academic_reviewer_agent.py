@@ -15,7 +15,7 @@ class AcademicReviewerAgent(PipelineAgent):
     def __init__(
         self,
         comments: list[ReviewComment] | None = None,
-        passed: bool = False,
+        passed: bool | None = None,
     ) -> None:
         self.comments = comments or []
         self.passed = passed
@@ -23,8 +23,7 @@ class AcademicReviewerAgent(PipelineAgent):
     def run(self, state: PipelineState) -> PipelineState:
         if self.comments:
             state.review_comments = self.comments
-        if isinstance(self.passed, bool):
+        if self.passed is not None:
             state.review_passed = self.passed
 
-        state.save("pipeline_state.json")
         return state

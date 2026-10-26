@@ -23,5 +23,4 @@ class LiteratureSynthesisAgent(PipelineAgent):
         if self.synthesis:
             state.synthesis = self.synthesis
 
-        state.save("pipeline_state.json")
         return state
