@@ -26,18 +26,16 @@ class TestCLI:
         result = runner.invoke(app, ["run", "--help"])
         assert result.exit_code == 0
 
-    def test_run_list_phases(self):
-        # "run" is a group; "list-phases" is a subcommand
-        result = runner.invoke(app, ["run", "list-phases"])
+    def test_list_phases(self):
+        result = runner.invoke(app, ["list-phases"])
         assert "Available phases" in result.stdout or result.exit_code == 0
 
     def test_dry_run(self):
-        # "run" is a group; "run" is the subcommand for the pipeline
-        result = runner.invoke(app, ["run", "run", "--dry-run"])
+        result = runner.invoke(app, ["run", "--dry-run"])
         assert result.exit_code == 0
         assert "Dry run" in result.stdout or "dry run" in result.stdout.lower()
 
     def test_conflicting_options(self):
-        result = runner.invoke(app, ["run", "run", "--phase", "a", "--from", "b"])
+        result = runner.invoke(app, ["run", "--phase", "a", "--from", "b"])
         # Typer returns 2 for parameter errors (sys.exit(2))
         assert result.exit_code in (1, 2)

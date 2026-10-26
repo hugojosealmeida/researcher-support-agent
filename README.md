@@ -48,7 +48,7 @@ research run --dry-run          # Validate without executing
 ### List phases
 
 ```bash
-research run list-phases
+research list-phases
 ```
 
 ### Version

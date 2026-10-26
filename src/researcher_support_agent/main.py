@@ -6,7 +6,7 @@ import typer
 
 from researcher_support_agent import __version__
 from researcher_support_agent.commands.doctor import doctor
-from researcher_support_agent.commands.run import app as run_app
+from researcher_support_agent.commands.run import list_phases, run
 from researcher_support_agent.logging_config import setup_logging
 
 app = typer.Typer(
@@ -16,7 +16,8 @@ app = typer.Typer(
 )
 
 app.command("doctor")(doctor)
-app.add_typer(run_app, name="run", help="Execute the research workflow")
+app.command("run")(run)
+app.command("list-phases")(list_phases)
 
 
 @app.callback()

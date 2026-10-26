@@ -4,17 +4,9 @@ from __future__ import annotations
 
 import typer
 
-from researcher_support_agent.logging_config import get_logger, setup_logging
-
-app = typer.Typer(help="Execute the research workflow.")
+from researcher_support_agent.logging_config import get_logger
 
 
-@app.callback()
-def _run_callback() -> None:
-    setup_logging()
-
-
-@app.command()
 def run(
     phase: str | None = typer.Option(
         None, "--phase", "-p", help="Run a single phase by name."
@@ -60,7 +52,6 @@ def run(
     typer.echo(f"State file: {state_path}")
 
 
-@app.command(name="list-phases")
 def list_phases() -> None:
     """List available phases (placeholder — populated once phases are registered)."""
     typer.echo("Available phases (placeholder):")

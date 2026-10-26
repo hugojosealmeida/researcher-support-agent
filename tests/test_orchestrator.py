@@ -48,6 +48,13 @@ class TestPhaseResult:
     def test_defaults(self):
         r = PhaseResult(phase="test")
         assert r.status == Status.COMPLETED
+        assert r.artifacts == {}
+
+    def test_default_artifacts_is_mutable_dict(self):
+        r1 = PhaseResult(phase="a")
+        r2 = PhaseResult(phase="b")
+        r1.artifacts["x"] = 1
+        assert "x" not in r2.artifacts
 
     def test_failed(self):
         r = PhaseResult(phase="test", status=Status.FAILED, error="boom")

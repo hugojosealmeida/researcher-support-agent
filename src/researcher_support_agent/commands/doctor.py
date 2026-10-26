@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import logging
 import sys
 
 import typer
@@ -27,7 +28,13 @@ def doctor(
     ),
 ) -> None:
     """Verify dependencies, model configuration, and database access."""
-    setup_logging(level="WARNING")
+    # Honour the global verbose flag (set by the main callback) instead of
+    # unconditionally overriding the log level. Only lower verbosity when the
+    # user has not requested debug output.
+    if verbose:
+        setup_logging(level="DEBUG")
+    elif logging.getLogger().level != logging.DEBUG:
+        setup_logging(level="WARNING")
     results: list[tuple[str, bool, str]] = []
 
     # 1. Python version

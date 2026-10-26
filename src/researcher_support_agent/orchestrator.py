@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .models.common import Status
 
@@ -22,7 +22,7 @@ class PhaseResult(BaseModel):
     phase: str
     status: Status = Status.COMPLETED
     message: str = ""
-    artifacts: dict[str, Any] = field(default_factory=dict)
+    artifacts: dict[str, Any] = Field(default_factory=dict)
     error: str | None = None
 
 
