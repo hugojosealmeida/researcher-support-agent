@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -11,8 +9,8 @@ class Author(BaseModel):
     """A paper author."""
 
     full_name: str = Field(..., min_length=1)
-    orcid: Optional[str] = Field(default=None)
-    affiliation: Optional[str] = Field(default=None)
+    orcid: str | None = Field(default=None)
+    affiliation: str | None = Field(default=None)
 
 
 class Citation(BaseModel):
@@ -20,8 +18,8 @@ class Citation(BaseModel):
 
     key: str = Field(..., min_length=1)
     raw: str = Field(..., min_length=1)
-    year: Optional[int] = Field(default=None)
-    title: Optional[str] = Field(default=None)
+    year: int | None = Field(default=None)
+    title: str | None = Field(default=None)
 
 
 class PaperSummary(BaseModel):
@@ -52,23 +50,23 @@ class Paper(BaseModel):
 
     title: str = Field(..., min_length=1)
     authors: list[Author] = Field(default_factory=list)
-    year: Optional[int] = Field(default=None)
-    venue: Optional[str] = Field(default=None)
-    doi: Optional[str] = Field(default=None)
-    pmid: Optional[str] = Field(default=None)
-    arxiv_id: Optional[str] = Field(default=None)
-    source_id: Optional[str] = Field(default=None)  # source-specific ID
-    abstract: Optional[str] = Field(default=None)
-    url: Optional[str] = Field(default=None)
+    year: int | None = Field(default=None)
+    venue: str | None = Field(default=None)
+    doi: str | None = Field(default=None)
+    pmid: str | None = Field(default=None)
+    arxiv_id: str | None = Field(default=None)
+    source_id: str | None = Field(default=None)  # source-specific ID
+    abstract: str | None = Field(default=None)
+    url: str | None = Field(default=None)
     retrieval_status: str = Field(default=PaperStatus.RETRIEVED)
     processing_status: str = Field(default=PaperStatus.PENDING)
-    summary: Optional[PaperSummary] = Field(default=None)
+    summary: PaperSummary | None = Field(default=None)
     citations: list[Citation] = Field(default_factory=list)
     metadata: dict = Field(
         default_factory=dict, description="Raw or supplemental metadata from source"
     )
 
-    def get_identifier(self) -> Optional[str]:
+    def get_identifier(self) -> str | None:
         """Return the best available stable identifier."""
         if self.doi:
             return self.doi

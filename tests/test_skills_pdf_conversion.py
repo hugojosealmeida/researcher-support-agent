@@ -5,7 +5,6 @@ import os
 
 import pytest
 
-from researcher_support_agent.models.pdf_conversion import ExtractionWarning
 from researcher_support_agent.skills.pdf_conversion_skill import (
     CONVERSION_TOOL_VERSION,
     _sha256_file,
@@ -39,32 +38,30 @@ class TestPDFConversion:
         assert result.markdown_content  # has content
         assert result.source_pdf_path == str(sample_pdf)
 
-    def test_checksum_matches_file(self, sample_pdf):
-        result = convert_pdf(str(sample_pdf))
+    def test_checksum_matches_file(self, sample_pdf, tmp_dir):
+        result = convert_pdf(str(sample_pdf), output_dir=tmp_dir)
         expected = _sha256_file(str(sample_pdf))
         assert result.pdf_checksum == expected
 
-    def test_extraction_warning_on_minimal_pdf(self, sample_pdf):
+    def test_extraction_warning_on_minimal_pdf(self, sample_pdf, tmp_dir):
         """A minimal 1-pixel PDF has no real text content."""
-        result = convert_pdf(str(sample_pdf))
+        result = convert_pdf(str(sample_pdf), output_dir=tmp_dir)
         # Should complete without raising
         assert result is not None
 
     def test_file_not_found(self):
-        from pathlib import Path
 
         with pytest.raises(FileNotFoundError):
             convert_pdf("/nonexistent/path.pdf")
 
     def test_output_file_created(self, sample_pdf, tmp_dir):
         result = convert_pdf(str(sample_pdf), output_dir=tmp_dir)
-        import os
 
         output_path = os.path.join(tmp_dir, result.filename)
         assert os.path.exists(output_path)
 
-    def test_metadata_preserved(self, sample_pdf):
-        result = convert_pdf(str(sample_pdf))
+    def test_metadata_preserved(self, sample_pdf, tmp_dir):
+        result = convert_pdf(str(sample_pdf), output_dir=tmp_dir)
         assert "original_filename" in result.metadata_preserved
 
     def test_provenance_tracking(self, sample_pdf, tmp_dir):

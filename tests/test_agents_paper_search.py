@@ -10,7 +10,7 @@ from researcher_support_agent.agents.paper_search import (
     PaperSearchAgent,
     deduplicate_papers,
 )
-from researcher_support_agent.models.paper import Author, Paper
+from researcher_support_agent.models.paper import Paper
 
 
 class TestDeduplication:
@@ -47,7 +47,11 @@ class TestOpenAlexAdapter:
         os.environ["OPENALEX_FIXTURE"] = str(openalex_fixture)
         adapter = OpenAlexAdapter()
         try:
-            q = type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})()
+            q = type(
+                "Query",
+                (),
+                {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+            )()
             raw = adapter.search(q)
             assert len(raw) == 2
             papers = [adapter.normalize(r) for r in raw]
@@ -66,13 +70,28 @@ class TestOpenAlexAdapter:
         result = adapter.normalize({"id": "W1"})
         assert result is None
 
+    def test_abstract_reconstructed_from_positions(self):
+        adapter = OpenAlexAdapter()
+        record = {
+            "id": "W999",
+            "title": "Positional Abstract Test",
+            "abstract_inverted_index": {"zebra": [0], "apple": [1]},
+        }
+        result = adapter.normalize(record)
+        assert result is not None
+        assert result.abstract == "zebra apple"
+
 
 class TestCrossrefAdapter:
     def test_normalize_fixture(self, crossref_fixture):
         os.environ["CROSSREF_FIXTURE"] = str(crossref_fixture)
         adapter = CrossrefAdapter()
         try:
-            q = type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})()
+            q = type(
+                "Query",
+                (),
+                {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+            )()
             raw = adapter.search(q)
             assert len(raw) == 2
             papers = [adapter.normalize(r) for r in raw]
@@ -91,7 +110,13 @@ class TestEuropePMCAdapter:
         os.environ["EUROPEPMC_FIXTURE"] = str(europe_pmc_fixture)
         adapter = EuropePMCAdapter()
         try:
-            raw = adapter.search(type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})())
+            raw = adapter.search(
+                type(
+                    "Query",
+                    (),
+                    {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+                )()
+            )
             assert len(raw) == 2
             papers = [adapter.normalize(r) for r in raw]
             papers = [p for p in papers if p is not None]
@@ -108,11 +133,31 @@ class TestEuropePMCAdapter:
         os.environ["EUROPEPMC_FIXTURE"] = str(europe_pmc_fixture)
         adapter = EuropePMCAdapter()
         try:
-            raw = adapter.search(type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})())
+            raw = adapter.search(
+                type(
+                    "Query",
+                    (),
+                    {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+                )()
+            )
             paper = adapter.normalize(raw[1])
             assert paper.abstract is None
         finally:
             os.environ.pop("EUROPEPMC_FIXTURE", None)
+
+    def test_string_title(self):
+        adapter = EuropePMCAdapter()
+        record = {
+            "pmid": "36000099",
+            "title": "A String Title",
+            "authorList": {"author": []},
+            "publishDate": "2023-01-01",
+            "journalTitle": "Journal",
+            "abstractText": "Abstract text",
+        }
+        paper = adapter.normalize(record)
+        assert paper is not None
+        assert paper.title == "A String Title"
 
 
 class TestArxivAdapter:
@@ -120,7 +165,13 @@ class TestArxivAdapter:
         os.environ["ARXIV_FIXTURE"] = str(arxiv_fixture)
         adapter = ArxivAdapter()
         try:
-            raw = adapter.search(type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})())
+            raw = adapter.search(
+                type(
+                    "Query",
+                    (),
+                    {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+                )()
+            )
             assert len(raw) == 2
             papers = [adapter.normalize(r) for r in raw]
             papers = [p for p in papers if p is not None]

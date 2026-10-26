@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import List, Optional
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +10,7 @@ from pydantic import BaseModel, Field
 class ExtractionWarning(BaseModel):
     """A warning produced during PDF text extraction."""
 
-    page: Optional[int] = Field(default=None)
+    page: int | None = Field(default=None)
     message: str = Field(..., min_length=1)
     severity: str = Field(default="warning")
 
@@ -39,7 +38,7 @@ class PDFConversionResult(BaseModel):
         default=False, description="True if any content was lost"
     )
     converted_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now(UTC)
     )
     metadata_preserved: dict = Field(
         default_factory=dict, description="Preserved PDF metadata"

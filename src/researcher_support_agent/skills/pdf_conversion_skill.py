@@ -23,9 +23,8 @@ from __future__ import annotations
 
 import hashlib
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import List, Optional
 
 from slugify import slugify
 
@@ -54,7 +53,7 @@ def _extract_text_simple(pdf_path: str) -> str:
         import fitz  # type: ignore
 
         doc = fitz.open(pdf_path)
-        parts: List[str] = []
+        parts: list[str] = []
         for page_num, page in enumerate(doc, start=1):
             text = page.get_text()
             parts.append(f"--- Page {page_num} ---\n{text}")
@@ -68,7 +67,7 @@ def _extract_text_simple(pdf_path: str) -> str:
         import pdfplumber  # type: ignore
 
         with pdfplumber.open(pdf_path) as pdf:
-            parts: List[str] = []
+            parts: list[str] = []
             for page_num, page in enumerate(pdf.pages, start=1):
                 text = page.extract_text() or ""
                 parts.append(f"--- Page {page_num} ---\n{text}")
@@ -98,16 +97,18 @@ def _extract_text_simple(pdf_path: str) -> str:
 def _generate_markdown(
     raw_text: str,
     metadata: dict,
-    warnings: List[ExtractionWarning],
+    warnings: list[ExtractionWarning],
 ) -> str:
     """Convert raw extracted text to structured Markdown."""
     lines = raw_text.split("\n")
-    md_lines: List[str] = []
+    md_lines: list[str] = []
 
     for line in lines:
         stripped = line.strip()
         # Simple heading detection
-        if stripped and (stripped.isupper() and len(stripped) < 80 or stripped.endswith(":")):
+        if stripped and (
+            stripped.isupper() and len(stripped) < 80 or stripped.endswith(":")
+        ):
             md_lines.append(f"\n## {stripped}\n")
         elif stripped.startswith("References") or stripped.startswith("Bibliography"):
             md_lines.append(f"\n# {stripped}\n")
@@ -121,7 +122,7 @@ def _generate_markdown(
         0,
         f"---\n"
         f"source: {metadata.get('original_filename', 'unknown.pdf')}\n"
-        f"extracted_at: {datetime.now(timezone.utc).isoformat()}\n"
+        f"extracted_at: {datetime.now(UTC).isoformat()}\n"
         f"---\n",
     )
 
@@ -137,7 +138,7 @@ def _generate_markdown(
 
 def convert_pdf(
     pdf_path: str,
-    output_dir: Optional[str] = None,
+    output_dir: str | None = None,
 ) -> PDFConversionResult:
     """Convert a single PDF to Markdown.
 
@@ -156,7 +157,7 @@ def convert_pdf(
     else:
         output_path = filename
 
-    warnings: List[ExtractionWarning] = []
+    warnings: list[ExtractionWarning] = []
     extraction_failures = False
 
     # Extract text
@@ -164,7 +165,9 @@ def convert_pdf(
     if "extraction unavailable" in raw_text.lower():
         warnings.append(
             ExtractionWarning(
-                message="No PDF extraction tool available; content will be placeholder text",
+                message=(
+                    "No PDF extraction tool available; content will be placeholder text"
+                ),
                 severity="error",
             )
         )
@@ -185,7 +188,7 @@ def convert_pdf(
                 import glob
 
                 png_files = sorted(glob.glob("/tmp/pdf_page-*.png"))
-                ocr_parts: List[str] = []
+                ocr_parts: list[str] = []
                 for i, png_file in enumerate(png_files):
                     ocr_result = subprocess.run(
                         ["tesseract", png_file, "stdout"],

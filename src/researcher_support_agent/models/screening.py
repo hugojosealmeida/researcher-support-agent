@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Optional
+from datetime import UTC, datetime
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class ScreeningDecision(str, Enum):
+class ScreeningDecision(StrEnum):
     ACCEPT = "accept"
     EXCLUDE = "exclude"
     BORDERLINE = "borderline"
@@ -39,7 +38,7 @@ class ScreeningResult(BaseModel):
         default=False, description="True for borderline cases needing human review"
     )
     screened_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now(UTC)
     )
     source: str = Field(
         default="automated", description="Agent or human that performed screening"

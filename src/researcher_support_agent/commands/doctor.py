@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import importlib
 import sys
-from typing import List
 
 import typer
 
@@ -21,7 +20,7 @@ def _doctor(
     ),
 ) -> None:
     """Run a health check on the environment."""
-    results: List[dict] = []
+    results: list[dict] = []
     all_ok = True
 
     # Python version
@@ -66,7 +65,9 @@ def _doctor(
         results.append({
             "check": "optional_pdf_tool",
             "status": "ok",
-            "detail": "PyMuPDF not installed (optional — PDF extraction will use fallback)",
+            "detail": (
+                "PyMuPDF not installed (optional — PDF extraction will use fallback)"
+            ),
         })
 
     # Print summary
@@ -77,11 +78,10 @@ def _doctor(
     if verbose:
         typer.echo("")
         typer.echo("--- JSON serialization sample ---")
-        import json
-        from .models.project import ResearchProject
+        from ..models.project import ResearchProject
 
         sample = ResearchProject(title="Sample Project", questions=["Q1"])
-        typer.echo(json.dumps(sample.model_dump(), indent=2))
+        typer.echo(sample.model_dump_json(indent=2))
 
     if not all_ok:
         typer.echo("")

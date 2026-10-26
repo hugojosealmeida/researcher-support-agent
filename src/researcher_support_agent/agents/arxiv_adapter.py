@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from typing import Any
 
 from ..models.paper import Author, Paper
@@ -44,10 +45,8 @@ class ArxivAdapter(SourceAdapter):
         published = entry.get("published", "")
         year: int | None = None
         if published:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 year = int(published[:4])
-            except (ValueError, TypeError):
-                pass
 
         arxiv_id = entry.get("id", "")
         summary = entry.get("summary", "")

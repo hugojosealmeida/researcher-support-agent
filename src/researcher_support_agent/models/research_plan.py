@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -19,10 +18,10 @@ class ResearchQuestion(BaseModel):
         default_factory=dict,
         description="Mappings from concept -> synonym list",
     )
-    date_from: Optional[str] = Field(
+    date_from: str | None = Field(
         default=None, description="Start date filter (YYYY-MM-DD)"
     )
-    date_to: Optional[str] = Field(
+    date_to: str | None = Field(
         default=None, description="End date filter (YYYY-MM-DD)"
     )
     inclusion_criteria: list[str] = Field(
@@ -39,7 +38,7 @@ class ProtocolApproval(BaseModel):
     approved: bool = Field(..., description="Whether the protocol was approved")
     approved_by: str = Field(..., description="Who approved it")
     approved_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now(UTC)
     )
     comments: str = Field(default="", description="Reviewer comments")
 
@@ -58,14 +57,14 @@ class ResearchPlan(BaseModel):
     protocol_approved: bool = Field(
         default=False, description="Whether the protocol received explicit approval"
     )
-    approval: Optional[ProtocolApproval] = Field(
+    approval: ProtocolApproval | None = Field(
         default=None, description="Approval record if approved"
     )
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now(UTC)
     )
     updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc)
+        default_factory=lambda: datetime.now(UTC)
     )
 
     def approve(self, by: str, comments: str = "") -> None:
@@ -74,7 +73,7 @@ class ResearchPlan(BaseModel):
         self.approval = ProtocolApproval(
             approved=True, approved_by=by, comments=comments
         )
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def needs_approval(self) -> bool:
         """Return True if the plan still requires explicit approval."""

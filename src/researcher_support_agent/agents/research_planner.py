@@ -6,8 +6,6 @@ limits, inclusion/exclusion criteria, and an initial protocol.
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 from ..models.research_plan import ResearchPlan, ResearchQuestion

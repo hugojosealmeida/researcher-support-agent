@@ -5,7 +5,6 @@ from researcher_support_agent.agents.research_planner import (
     build_research_plan,
     generate_research_questions,
 )
-from researcher_support_agent.models.research_plan import ResearchPlan
 
 
 class TestResearchQuestions:

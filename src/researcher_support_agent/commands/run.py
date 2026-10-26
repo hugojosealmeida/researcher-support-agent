@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 import typer
 
 from ..agents.research_planner import ResearchPlannerConfig, build_research_plan
 from ..logging_config import configure_logging, get_logger
-from ..models.project import ResearchProject
-from ..orchestrator import Phase, Orchestrator
+from ..orchestrator import Orchestrator, Phase
 
 logger = get_logger(__name__)
 
@@ -19,10 +16,10 @@ app = typer.Typer(help="Run the research pipeline.")
 @app.command()
 def run(
     topic: str = typer.Option(..., "--topic", "-t", help="Research topic"),
-    phase: Optional[str] = typer.Option(
+    phase: str | None = typer.Option(
         None, "--phase", "-p", help="Run a single phase only"
     ),
-    from_phase: Optional[str] = typer.Option(
+    from_phase: str | None = typer.Option(
         None, "--from", help="Resume from a specific phase"
     ),
     state_file: str = typer.Option(
@@ -67,7 +64,10 @@ def run(
 
     def _handle_search(ph: Phase, state) -> None:
         if plan_handler and plan_handler.needs_approval():
-            typer.echo("ERROR: Protocol not approved. Run with --approve flag or approve manually.")
+            typer.echo(
+                "ERROR: Protocol not approved. "
+                "Run with --approve flag or approve manually."
+            )
             raise RuntimeError("Protocol approval required before search")
         typer.echo("Search phase: no adapters configured in default handler")
 

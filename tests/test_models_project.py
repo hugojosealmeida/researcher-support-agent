@@ -36,7 +36,7 @@ class TestResearchProject:
         assert p2.status == p.status
 
     def test_validation_rejects_empty_title(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             ResearchProject(title="")
 
     def test_validation_rejects_empty_description(self):

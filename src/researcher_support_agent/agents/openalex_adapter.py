@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from typing import Any
 
 from ..models.paper import Author, Paper
@@ -32,7 +33,7 @@ class OpenAlexAdapter(SourceAdapter):
         return f"{BASE_URL}/works?{urlencode(params)}"
 
     def _parse_paper(self, record: dict[str, Any]) -> Paper | None:
-        title = record.get("title", None)
+        title = record.get("title")
         # Handle both string and list title formats (Crossref uses lists)
         if isinstance(title, list):
             title = title[0] if title else None
@@ -65,17 +66,15 @@ class OpenAlexAdapter(SourceAdapter):
                     )
                 )
 
-        doi = record.get("doi", None)
+        doi = record.get("doi")
         if doi and isinstance(doi, str):
             doi = doi.replace("https://doi.org/", "")
 
-        publication_date = record.get("publication_date", None)
+        publication_date = record.get("publication_date")
         year: int | None = None
         if publication_date:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 year = int(publication_date[:4])
-            except (ValueError, TypeError):
-                pass
 
         venue = None
         primary_location = record.get("primary_location", {}) or {}
@@ -84,12 +83,21 @@ class OpenAlexAdapter(SourceAdapter):
             venue = source_info.get("display_name")
 
         # OpenAlex abstract_inverted_index is a dict; convert to string
-        abstract_raw = record.get("abstract_inverted_index", None)
+        abstract_raw = record.get("abstract_inverted_index")
         abstract: str | None = None
         if isinstance(abstract_raw, dict):
             try:
-                abstract = " ".join(word for word in sorted(abstract_raw.keys()))
-            except (AttributeError, TypeError):
+                positions: list[tuple[int, str]] = []
+                for word, pos_list in abstract_raw.items():
+                    if not isinstance(pos_list, list):
+                        continue
+                    for pos in pos_list:
+                        positions.append((int(pos), str(word)))
+                positions.sort(key=lambda pair: pair[0])
+                abstract = " ".join(word for _, word in positions)
+                if abstract == "":
+                    abstract = None
+            except (AttributeError, TypeError, ValueError):
                 abstract = None
 
         return Paper(
@@ -100,7 +108,11 @@ class OpenAlexAdapter(SourceAdapter):
             doi=doi,
             source_id=record.get("id"),
             abstract=abstract,
-            url=f"https://openalex.org/{record.get('id', '')}" if record.get("id") else None,
+            url=(
+                f"https://openalex.org/{record.get('id', '')}"
+                if record.get("id")
+                else None
+            ),
             retrieval_status="retrieved",
             processing_status="pending",
             metadata={"openalex_id": record.get("id")},

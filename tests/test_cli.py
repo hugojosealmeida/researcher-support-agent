@@ -2,7 +2,6 @@
 
 import os
 
-import pytest
 from typer.testing import CliRunner
 
 from researcher_support_agent.main import app
@@ -54,3 +53,8 @@ class TestCLI:
         result = runner.invoke(app, ["doctor"])
         assert result.exit_code == 0
         assert "Environment check passed" in result.output
+
+    def test_doctor_verbose(self):
+        result = runner.invoke(app, ["doctor", "--verbose"])
+        assert result.exit_code == 0
+        assert "JSON serialization sample" in result.output

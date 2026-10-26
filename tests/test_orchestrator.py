@@ -1,15 +1,14 @@
 """Tests for the orchestrator."""
 
 import os
-import tempfile
 
 import pytest
 
 from researcher_support_agent.orchestrator import (
-    Phase,
-    PhaseState,
     Orchestrator,
     OrchestratorState,
+    Phase,
+    PhaseState,
 )
 
 

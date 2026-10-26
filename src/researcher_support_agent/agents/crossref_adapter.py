@@ -48,8 +48,10 @@ class CrossrefAdapter(SourceAdapter):
                 )
             )
 
-        doi = record.get("DOI", None)
-        published_print = record.get("published-print", {}) or record.get("published", {})
+        doi = record.get("DOI")
+        published_print = record.get("published-print", {}) or record.get(
+            "published", {}
+        )
         year: int | None = None
         if published_print:
             date_parts = published_print.get("date-parts", [[]])[0]
@@ -59,7 +61,7 @@ class CrossrefAdapter(SourceAdapter):
         container = record.get("container-title", [])
         venue = container[0] if container else None
 
-        abstract = record.get("abstract", None)
+        abstract = record.get("abstract")
 
         return Paper(
             title=title,

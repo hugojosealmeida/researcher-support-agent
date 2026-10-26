@@ -1,8 +1,7 @@
 """Tests for screening models."""
 
-import pytest
 
-from datetime import datetime, timezone
+import pytest
 
 from researcher_support_agent.models.screening import ScreeningDecision, ScreeningResult
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from typing import Any
 
 from ..models.paper import Author, Paper
@@ -31,32 +32,36 @@ class EuropePMCAdapter(SourceAdapter):
         return f"{BASE_URL}/search?{urlencode(params)}"
 
     def _parse_paper(self, record: dict[str, Any]) -> Paper | None:
-        title = record.get("title", [])
+        title = record.get("title")
         if not title:
             return None
-        title_text = title[0] if title else None
-        if not title_text:
+        if isinstance(title, str):
+            title_text = title
+        elif isinstance(title, list):
+            title_text = title[0] if title else None
+        else:
+            title_text = None
+        if not title_text or not isinstance(title_text, str):
             return None
+        title_text = title_text.strip()
 
         authors: list[Author] = []
         for author in record.get("authorList", {}).get("author", [])[:20]:
             full = f"{author.get('forename', '')} {author.get('surname', '')}".strip()
             authors.append(Author(full_name=full or "Unknown"))
 
-        pmid = record.get("pmid", None)
-        pmcid = record.get("pmcid", None)
-        doi = record.get("doi", None)
+        pmid = record.get("pmid")
+        pmcid = record.get("pmcid")
+        doi = record.get("doi")
 
-        pub_date = record.get("publishDate", None)
+        pub_date = record.get("publishDate")
         year: int | None = None
         if pub_date:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 year = int(pub_date[:4])
-            except (ValueError, TypeError):
-                pass
 
-        journal_title = record.get("journalTitle", None)
-        abstract = record.get("abstractText", None)
+        journal_title = record.get("journalTitle")
+        abstract = record.get("abstractText")
         if abstract == "":
             abstract = None
 
@@ -69,7 +74,11 @@ class EuropePMCAdapter(SourceAdapter):
             pmid=pmid,
             source_id=pmcid or pmid,
             abstract=abstract,
-            url=f"https://www.ebi.ac.uk/europepmc/abstract/MED/{pmid}" if pmid else None,
+            url=(
+                f"https://www.ebi.ac.uk/europepmc/abstract/MED/{pmid}"
+                if pmid
+                else None
+            ),
             retrieval_status="retrieved",
             processing_status="pending",
             metadata={"europe_pmc_id": pmcid or pmid},

@@ -7,10 +7,9 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
-from enum import Enum
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +18,7 @@ from .logging_config import get_logger
 logger = get_logger(__name__)
 
 
-class Phase(str, Enum):
+class Phase(StrEnum):
     """Pipeline phases in execution order."""
 
     PLAN = "plan"
@@ -41,7 +40,7 @@ PHASE_ORDER = [
 ]
 
 
-class PhaseState(str, Enum):
+class PhaseState(StrEnum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -53,13 +52,13 @@ class OrchestratorState(BaseModel):
     """Persistable orchestrator state."""
 
     project_id: str = Field(..., description="Project identifier")
-    phases: Dict[str, PhaseState] = Field(
+    phases: dict[str, PhaseState] = Field(
         default_factory=dict, description="Phase name -> status"
     )
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
-    def phase_statuses(self) -> Dict[str, str]:
+    def phase_statuses(self) -> dict[str, str]:
         """Return phase statuses as a simple dict."""
         return dict(self.phases)
 
@@ -68,7 +67,7 @@ class OrchestratorState(BaseModel):
 
     def set_phase(self, phase: Phase, state: PhaseState) -> None:
         self.phases[phase.value] = state
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
 
 class Orchestrator:
@@ -76,7 +75,7 @@ class Orchestrator:
 
     def __init__(
         self,
-        state_file: Optional[str] = None,
+        state_file: str | None = None,
         max_retries: int = 3,
     ) -> None:
         self.state_file = state_file or "state.json"
@@ -95,7 +94,7 @@ class Orchestrator:
             json.dump(self.state.model_dump(), f, indent=2, default=str)
         logger.info("state_saved", file=self.state_file)
 
-    def _get_phase_order(self) -> List[Phase]:
+    def _get_phase_order(self) -> list[Phase]:
         """Return phases to run, skipping already completed ones."""
         return [p for p in PHASE_ORDER if not self.state.is_phase_done(p)]
 
@@ -127,7 +126,7 @@ class Orchestrator:
                 self.save_state()
                 raise
 
-    def run_all(self) -> Dict[str, PhaseState]:
+    def run_all(self) -> dict[str, PhaseState]:
         """Run all remaining phases in order."""
         phases = self._get_phase_order()
         if not phases:
@@ -136,7 +135,7 @@ class Orchestrator:
 
         logger.info("phase_run", phases=[p.value for p in phases])
 
-        phase_handlers: Dict[Phase, Any] = {
+        phase_handlers: dict[Phase, Any] = {
             Phase.PLAN: self._handle_plan,
             Phase.SEARCH: self._handle_search,
             Phase.SCREEN: self._handle_screen,
@@ -173,9 +172,9 @@ class Orchestrator:
     ) -> None:
         logger.info("manuscript_phase", state=state.phase_statuses())
 
-    def dry_run(self) -> Dict[str, bool]:
+    def dry_run(self) -> dict[str, bool]:
         """Validate state without executing."""
-        result: Dict[str, bool] = {}
+        result: dict[str, bool] = {}
         for phase in PHASE_ORDER:
             done = self.state.is_phase_done(phase)
             result[phase.value] = done

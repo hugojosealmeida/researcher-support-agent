@@ -34,6 +34,8 @@ class TestEvidence:
 
 class TestReviewFinding:
     def test_minimal(self):
-        f = ReviewFinding(category="bias", severity="medium", description="Selection bias")
+        f = ReviewFinding(
+            category="bias", severity="medium", description="Selection bias"
+        )
         assert f.category == "bias"
         assert f.resolution is None

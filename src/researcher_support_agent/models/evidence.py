@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -22,4 +20,4 @@ class ReviewFinding(BaseModel):
     category: str = Field(..., min_length=1)
     severity: str = Field(default="low")
     description: str = Field(..., min_length=1)
-    resolution: Optional[str] = Field(default=None)
+    resolution: str | None = Field(default=None)

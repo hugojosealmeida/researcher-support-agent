@@ -1,6 +1,5 @@
 """Tests for the research plan models."""
 
-from datetime import datetime, timezone
 
 from researcher_support_agent.models.research_plan import (
     ProtocolApproval,
@@ -42,7 +41,9 @@ class TestProtocolApproval:
 
     def test_with_comments(self):
         approval = ProtocolApproval(
-            approved=True, approved_by="reviewer", comments="Approved with minor changes"
+            approved=True,
+            approved_by="reviewer",
+            comments="Approved with minor changes",
         )
         assert approval.comments == "Approved with minor changes"
 

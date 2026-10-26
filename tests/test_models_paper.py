@@ -1,21 +1,17 @@
 """Tests for data models."""
 
-import json
+
+from datetime import UTC
 
 import pytest
 
 from researcher_support_agent.models.common import make_id, now_utc
-from researcher_support_agent.models.evidence import Evidence, ReviewFinding
+from researcher_support_agent.models.evidence import Evidence
 from researcher_support_agent.models.manuscript import Manuscript
 from researcher_support_agent.models.paper import (
     Author,
     Citation,
     Paper,
-    PaperSummary,
-)
-from researcher_support_agent.models.pdf_conversion import (
-    ExtractionWarning,
-    PDFConversionResult,
 )
 from researcher_support_agent.models.project import ProjectStatus, ResearchProject
 from researcher_support_agent.models.query import SearchQuery
@@ -38,7 +34,7 @@ class TestResearchProject:
         assert proj.updated_at > before
 
     def test_validation_rejects_empty_title(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             ResearchProject(title="")
 
 
@@ -85,7 +81,9 @@ class TestAuthor:
 
 class TestCitation:
     def test_create_citation(self):
-        c = Citation(key="alice2023", raw="Alice et al. (2023)", year=2023, title="Title")
+        c = Citation(
+            key="alice2023", raw="Alice et al. (2023)", year=2023, title="Title"
+        )
         assert c.year == 2023
 
 
@@ -114,9 +112,8 @@ class TestSearchQuery:
 class TestCommon:
     def test_now_utc(self):
         ts = now_utc()
-        from datetime import timezone
 
-        assert ts.tzinfo == timezone.utc
+        assert ts.tzinfo == UTC
 
     def test_make_id(self):
         id1 = make_id()

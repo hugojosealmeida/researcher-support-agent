@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Optional
+from datetime import UTC, datetime
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     """Generic status enum used by many models."""
 
     PENDING = "pending"
@@ -21,7 +20,7 @@ class Status(str, Enum):
 
 def now_utc() -> datetime:
     """Return the current UTC timestamp."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def make_id() -> UUID:

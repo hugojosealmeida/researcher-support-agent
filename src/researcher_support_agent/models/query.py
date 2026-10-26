@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -14,7 +12,7 @@ class SearchQuery(BaseModel):
     database: str = Field(
         ..., description="Target database or source name (e.g. 'openalex', 'crossref')"
     )
-    filters: Dict[str, str] = Field(
+    filters: dict[str, str] = Field(
         default_factory=dict, description="Additional filter parameters"
     )
     results_count: int = Field(default=0, description="Number of results returned")

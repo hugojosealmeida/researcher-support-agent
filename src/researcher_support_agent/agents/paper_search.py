@@ -13,7 +13,7 @@ and deduplication across sources.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
@@ -128,7 +128,7 @@ class PaperSearchAgent:
                     "query": query_string,
                     "date_from": date_from,
                     "date_to": date_to,
-                    "searched_at": datetime.now(timezone.utc).isoformat(),
+                    "searched_at": datetime.now(UTC).isoformat(),
                     "sources": [a.source_name for a in used_adapters],
                 })
                 papers.append(paper)

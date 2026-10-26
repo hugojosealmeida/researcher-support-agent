@@ -33,7 +33,9 @@ class TestScreening:
         title: str = "Machine Learning for Healthcare",
         abstract: str | None = "A machine learning approach for healthcare",
     ) -> Paper:
-        return Paper(title=title, abstract=abstract, authors=[Author(full_name="Alice")])
+        return Paper(
+            title=title, abstract=abstract, authors=[Author(full_name="Alice")]
+        )
 
     def test_accept_paper_matching_inclusion(self):
         plan = self._make_plan()
