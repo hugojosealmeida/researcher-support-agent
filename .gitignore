@@ -1,0 +1,57 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated artifacts
+*.pdf
+*.md  # Only in output directories, not in src/tests
+evidence/
+outputs/
+artifacts/
+manuscript_drafts/
+release/
+
+# State and checkpoint files
+state.json
+checkpoint.json
+
+# Logs
+*.log
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# Pytest cache
+.pytest_cache/
+
+# Ruff cache
+.ruff_cache/
+
+# Environment variables
+.env
+
+# Token tracker state
+token_usage.json
