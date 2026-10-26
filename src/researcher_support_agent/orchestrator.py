@@ -87,12 +87,12 @@ class Orchestrator:
         if os.path.exists(self.state_file):
             with open(self.state_file) as f:
                 self.state = OrchestratorState(**json.load(f))
-            logger.info("state_loaded", file=self.state_file)
+            logger.info("state_loaded: %s", self.state_file)
 
     def save_state(self) -> None:
         with open(self.state_file, "w") as f:
             json.dump(self.state.model_dump(), f, indent=2, default=str)
-        logger.info("state_saved", file=self.state_file)
+        logger.info("state_saved: %s", self.state_file)
 
     def _get_phase_order(self) -> list[Phase]:
         """Return phases to run, skipping already completed ones."""
@@ -111,14 +111,16 @@ class Orchestrator:
                 handler(phase, self.state)
                 self.state.set_phase(phase, PhaseState.COMPLETED)
                 self.save_state()
-                logger.info("phase_completed", phase=phase.value, attempt=attempt)
+                logger.info(
+                    "phase_completed: phase=%s attempt=%s", phase.value, attempt
+                )
                 return True
             except Exception as exc:
                 logger.warning(
-                    "phase_failed",
-                    phase=phase.value,
-                    attempt=attempt,
-                    error=str(exc),
+                    "phase_failed: phase=%s attempt=%s error=%s",
+                    phase.value,
+                    attempt,
+                    str(exc),
                 )
                 if attempt < self.max_retries:
                     continue
@@ -133,7 +135,7 @@ class Orchestrator:
             logger.info("all_phases_complete")
             return self.state.phase_statuses()
 
-        logger.info("phase_run", phases=[p.value for p in phases])
+        logger.info("phase_run: phases=%s", [p.value for p in phases])
 
         phase_handlers: dict[Phase, Any] = {
             Phase.PLAN: self._handle_plan,
@@ -153,24 +155,24 @@ class Orchestrator:
 
     # Default phase handlers (subclasses or callers can override)
     def _handle_plan(self, phase: Phase, state: OrchestratorState) -> None:
-        logger.info("plan_phase", state=state.phase_statuses())
+        logger.info("plan_phase: state=%s", state.phase_statuses())
 
     def _handle_search(self, phase: Phase, state: OrchestratorState) -> None:
-        logger.info("search_phase", state=state.phase_statuses())
+        logger.info("search_phase: state=%s", state.phase_statuses())
 
     def _handle_screen(self, phase: Phase, state: OrchestratorState) -> None:
-        logger.info("screen_phase", state=state.phase_statuses())
+        logger.info("screen_phase: state=%s", state.phase_statuses())
 
     def _handle_retrieve(self, phase: Phase, state: OrchestratorState) -> None:
-        logger.info("retrieve_phase", state=state.phase_statuses())
+        logger.info("retrieve_phase: state=%s", state.phase_statuses())
 
     def _handle_synthesize(self, phase: Phase, state: OrchestratorState) -> None:
-        logger.info("synthesize_phase", state=state.phase_statuses())
+        logger.info("synthesize_phase: state=%s", state.phase_statuses())
 
     def _handle_manuscript(
         self, phase: Phase, state: OrchestratorState
     ) -> None:
-        logger.info("manuscript_phase", state=state.phase_statuses())
+        logger.info("manuscript_phase: state=%s", state.phase_statuses())
 
     def dry_run(self) -> dict[str, bool]:
         """Validate state without executing."""

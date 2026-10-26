@@ -12,7 +12,9 @@ Retains review findings, resolutions, manuscript versions, and a change log.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -21,10 +23,10 @@ from ..models.common import now_utc
 from ..models.manuscript import Manuscript
 from ..models.reviewer import (
     ReviewCriteria,
-    ReviewReport,
+    ReviewFinding as AcademicReviewFinding,
 )
 from ..models.reviewer import (
-    ReviewFinding as AcademicReviewFinding,
+    ReviewReport,
 )
 
 
@@ -65,19 +67,54 @@ class RevisionLoopResult(BaseModel):
     resolved_count: int = Field(default=0)
     unresolved_count: int = Field(default=0)
     completed_at: datetime = Field(default_factory=now_utc)
+    # Human-approval gate state
+    human_approval_required: bool = Field(
+        default=False, description="Whether human approval is required before proceeding"
+    )
+    approval_required: bool = Field(
+        default=False, description="Alias for human_approval_required"
+    )
+    pending_human_approval: bool = Field(
+        default=False, description="Alias for human_approval_required"
+    )
+    human_approved: bool = Field(
+        default=False, description="Whether human approval was granted"
+    )
 
 
 class RevisionAgent:
     """Agent that addresses reviewer comments and manages the revision loop."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        human_approval_callback: Callable[[ReviewReport], bool] | None = None,
+        approval_callback: Callable[[ReviewReport], bool] | None = None,
+        human_approval_fn: Callable[[ReviewReport], bool] | None = None,
+        **kwargs: Any,
+    ) -> None:
         self._reviewer = AcademicReviewer()
+        self._approval_callback = (
+            human_approval_callback
+            or approval_callback
+            or human_approval_fn
+            or kwargs.get("human_approval")
+            or kwargs.get("approval_fn")
+        )
+        # Allow a boolean flag passed as callback-ish? Keep None if not callable
+        if not callable(self._approval_callback):
+            self._approval_callback = None
 
     def run_revision_loop(
         self,
         initial_manuscript: Manuscript,
         known_paper_ids: set[str],
         criteria: ReviewCriteria | None = None,
+        bibliography: Any = None,
+        human_approval_callback: Callable[[ReviewReport], bool] | None = None,
+        approval_callback: Callable[[ReviewReport], bool] | None = None,
+        human_approval_fn: Callable[[ReviewReport], bool] | None = None,
+        auto_approve: bool = False,
+        **kwargs: Any,
     ) -> RevisionLoopResult:
         """Run the revision loop until criteria are met or max iterations reached.
 
@@ -85,11 +122,25 @@ class RevisionAgent:
             initial_manuscript: The manuscript to start revising.
             known_paper_ids: Verified paper IDs for citation validation.
             criteria: Review criteria (max iterations, required resolutions).
+            bibliography: Optional bibliography passed to reviewer.
+            human_approval_callback: Optional callback invoked when human approval
+                is required. Receives the ReviewReport and returns True to approve.
 
         Returns:
             The revision loop result with full audit trail.
         """
         criteria = criteria or ReviewCriteria()
+        cb = (
+            human_approval_callback
+            or approval_callback
+            or human_approval_fn
+            or kwargs.get("human_approval_callback")
+            or kwargs.get("approval_callback")
+            or self._approval_callback
+        )
+        if not callable(cb):
+            cb = None
+
         current_manuscript = initial_manuscript
         result = RevisionLoopResult(
             final_manuscript=current_manuscript,
@@ -103,18 +154,33 @@ class RevisionAgent:
 
         for iteration in range(1, criteria.max_iterations + 1):
             # Review the current manuscript
-            report = self._reviewer.review(current_manuscript, known_paper_ids)
+            report = self._reviewer.review(
+                current_manuscript, known_paper_ids, bibliography=bibliography
+            )
             result.review_history.append(report)
 
             # Check if manuscript passes criteria
             if criteria.would_pass(report):
                 break
 
-            # Check if human approval is needed for unresolved critical/major findings
+            # Human-approval gate: major/critical findings must not be
+            # silently auto-approved.
             if criteria.requires_human_approval(report):
-                # In a real system, this would prompt the human user
-                # For now, we auto-approve but flag in the result
-                pass
+                approved = False
+                if auto_approve:
+                    approved = True
+                elif cb is not None:
+                    try:
+                        approved = bool(cb(report))
+                    except Exception:
+                        approved = False
+                if not approved:
+                    result.human_approval_required = True
+                    result.approval_required = True
+                    result.pending_human_approval = True
+                    result.human_approved = False
+                    break
+                result.human_approved = True
 
             # Address unresolved findings
             unresolved = report.get_unresolved()
@@ -123,7 +189,7 @@ class RevisionAgent:
 
             # Perform revisions
             current_manuscript = self._apply_revisions(
-                current_manuscript, unresolved, iteration
+                current_manuscript, unresolved, iteration, result.revision_log
             )
             current_manuscript.bump_version()
 
@@ -137,11 +203,16 @@ class RevisionAgent:
             result.iterations = iteration
 
         # Final review to count resolved/unresolved
-        final_report = self._reviewer.review(current_manuscript, known_paper_ids)
+        final_report = self._reviewer.review(
+            current_manuscript, known_paper_ids, bibliography=bibliography
+        )
         result.review_history.append(final_report)
         result.final_manuscript = current_manuscript
         result.resolved_count = sum(1 for r in result.review_history for f in r.findings if f.resolved)
         result.unresolved_count = sum(1 for r in result.review_history[-1].findings if not r.resolved)
+        if result.human_approval_required:
+            result.approval_required = True
+            result.pending_human_approval = True
 
         return result
 
@@ -150,8 +221,10 @@ class RevisionAgent:
         manuscript: Manuscript,
         findings: list[AcademicReviewFinding],
         iteration: int,
+        revision_log: list[RevisionRecord] | None = None,
     ) -> Manuscript:
         """Apply revision changes to address review findings."""
+        records: list[RevisionRecord] = []
         for finding in findings:
             section_name = finding.location.lower()
 
@@ -175,11 +248,12 @@ class RevisionAgent:
                 action_taken=finding.suggested_correction or "Content appended",
                 section_name=section_name,
             )
-            # In a real implementation, we'd append to result.revision_log
-            # For now, just apply the changes to the manuscript
+            records.append(record)
 
         # Mark findings as resolved
         for finding in findings:
             finding.mark_resolved(f"Addressed in iteration {iteration}")
 
+        if revision_log is not None:
+            revision_log.extend(records)
         return manuscript

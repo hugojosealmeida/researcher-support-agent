@@ -12,10 +12,38 @@ Acceptance criteria:
 
 from __future__ import annotations
 
+import re
+
 from pydantic import BaseModel, Field
 
 from ..models.evidence import EvidencePointer, ResearchNote
 from ..models.paper import Paper
+
+
+# Section header aliases -> canonical section names used downstream
+_HEADER_ALIASES: dict[str, str] = {
+    "methodology": "Methodology",
+    "methods": "Methods",
+    "method": "Methods",
+    "data": "Data",
+    "sample": "Sample",
+    "dataset": "Data",
+    "participants": "Sample",
+    "data and sample": "Data",
+    "results": "Results",
+    "findings": "Findings",
+    "main results": "Results",
+    "outcomes": "Results",
+    "limitations": "Limitations",
+    "limitation": "Limitations",
+    "contributions": "Contributions",
+    "contribution": "Contributions",
+    "introduction": "Introduction",
+    "discussion": "Discussion",
+    "conclusion": "Conclusion",
+    "references": "References",
+    "abstract": "Abstract",
+}
 
 
 class PaperSummaryConfig(BaseModel):
@@ -32,6 +60,10 @@ class PaperSummaryConfig(BaseModel):
     )
 
 
+def _canonical_header(name: str) -> str | None:
+    return _HEADER_ALIASES.get(name.strip().lower().rstrip(":").strip())
+
+
 def summarize_paper(
     paper: Paper,
     raw_text: str | None = None,
@@ -43,20 +75,72 @@ def summarize_paper(
     # Parse raw text sections if provided
     sections: dict[str, str] = {}
     if raw_text:
+        # Normalise inline headers ("Methodology: x. Results: y.") onto
+        # their own lines so the line-based parser below can handle them.
+        alias_pattern = re.compile(
+            r"(?<![\\w])("
+            + "|".join(
+                re.escape(a) for a in sorted(_HEADER_ALIASES, key=len, reverse=True)
+            )
+            + r")\\s*:",
+            re.IGNORECASE,
+        )
+
+        def _split_inline(text: str) -> str:
+            return alias_pattern.sub(lambda m: "\n" + m.group(1) + ":", text)
+
+        normalised = _split_inline(raw_text)
+
         current_section = ""
         current_content: list[str] = []
-        for line in raw_text.split("\n"):
+
+        def _save() -> None:
+            nonlocal current_section, current_content
+            if current_section:
+                sections[current_section] = "\n".join(current_content).strip()
+            current_section = ""
+            current_content = []
+
+        for line in normalised.split("\n"):
             stripped = line.strip()
+            if not stripped:
+                continue
             if stripped.startswith("#"):
-                # Save previous section
-                if current_section:
-                    sections[current_section] = "\n".join(current_content).strip()
+                _save()
                 current_section = stripped.lstrip("#").strip()
+                canonical = _canonical_header(current_section)
+                if canonical:
+                    current_section = canonical
                 current_content = []
-            elif current_section:
+                continue
+
+            header_part = stripped
+            content_part = ""
+            if ":" in stripped:
+                head, tail = stripped.split(":", 1)
+                if _canonical_header(head.strip()) is not None:
+                    header_part = head.strip()
+                    content_part = tail.strip()
+
+            canonical = _canonical_header(header_part)
+            is_header_line = canonical is not None and (
+                ":" in stripped or header_part.strip().lower() in _HEADER_ALIASES
+            )
+            # A bare known header without colon also counts
+            if canonical is not None and header_part.strip().lower() in _HEADER_ALIASES and ":" not in stripped:
+                is_header_line = True
+
+            if is_header_line:
+                _save()
+                current_section = canonical  # type: ignore[assignment]
+                current_content = []
+                if content_part:
+                    current_content.append(content_part)
+                continue
+
+            if current_section:
                 current_content.append(line)
-        if current_section:
-            sections[current_section] = "\n".join(current_content).strip()
+        _save()
 
     # Extract evidence pointers if configured
     evidence_pointers: list[EvidencePointer] = []
@@ -81,7 +165,6 @@ def summarize_paper(
     quantitative = sections.get("Results", "")
     if config.include_quantitative_findings and quantitative:
         # Try to find numerical results
-        import re
         numbers = re.findall(r"\d+\.?\d*\s*(?:%|p\s*<|t\s*=|F\s*=|df\s*=|\(r\s*=\s*\d)", quantitative)
         if numbers:
             quantitative = "Numerical results: " + ", ".join(numbers)
