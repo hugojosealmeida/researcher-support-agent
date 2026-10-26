@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ..models.paper import Paper
-from ..reliability import RateLimiter, RetryPolicy, RetryableError
+from ..reliability import RateLimiter, RetryableError, RetryPolicy
 
 
 class CrossrefAdapter:
@@ -34,6 +34,8 @@ class CrossrefAdapter:
 
     def get_paper(self, doi: str) -> Paper | None:
         """Retrieve a specific paper by DOI."""
+        if self.rate_limiter:
+            self.rate_limiter.acquire()
 
         def _do_get() -> Paper | None:
             return None

@@ -27,7 +27,7 @@ class ScreeningAgent:
         """Screen a single paper."""
         # Simple keyword-based screening
         title_lower = (paper.title or "").lower()
-        abstract_lower = (paper.abstract or "").lower()
+        (paper.abstract or "").lower()
 
         # Include if it matches inclusion criteria or has no exclusion triggers
         exclude_reasons = []

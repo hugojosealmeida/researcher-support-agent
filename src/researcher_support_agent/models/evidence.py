@@ -7,12 +7,12 @@ and synthesis models for Phase C (evidence extraction and synthesis).
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class EvidenceStrength(str, Enum):
+class EvidenceStrength(StrEnum):
     STRONG = "strong"
     MODERATE = "moderate"
     WEAK = "weak"
@@ -50,9 +50,7 @@ class EvidencePointer(BaseModel):
     page: int | None = Field(default=None)
     table: str | None = Field(default=None)
     figure: str | None = Field(default=None)
-    description: str = Field(
-        ..., min_length=1, description="What this pointer points to"
-    )
+    description: str = Field(..., min_length=1, description="What this pointer points to")
 
 
 class ResearchNote(BaseModel):
@@ -69,41 +67,19 @@ class ResearchNote(BaseModel):
     year: int | None = Field(default=None)
 
     # --- Author-reported content (extracted from the paper) ---
-    research_question: str = Field(
-        default="Unknown", description="The paper's stated research question"
-    )
-    motivation: str = Field(
-        default="Unknown", description="Why the authors undertook this work"
-    )
-    methodology: str = Field(
-        default="Unknown", description="Methods used by the authors"
-    )
-    data_and_sample: str = Field(
-        default="Unknown", description="Data sources and sample description"
-    )
-    main_results: str = Field(
-        default="Unknown", description="Key findings reported by the authors"
-    )
-    quantitative_findings: str = Field(
-        default="Unknown", description="Specific numerical/statistical results"
-    )
-    contributions: str = Field(
-        default="Unknown", description="Authors' claimed contributions"
-    )
-    limitations: str = Field(
-        default="Unknown", description="Authors' stated limitations"
-    )
+    research_question: str = Field(default="Unknown", description="The paper's stated research question")
+    motivation: str = Field(default="Unknown", description="Why the authors undertook this work")
+    methodology: str = Field(default="Unknown", description="Methods used by the authors")
+    data_and_sample: str = Field(default="Unknown", description="Data sources and sample description")
+    main_results: str = Field(default="Unknown", description="Key findings reported by the authors")
+    quantitative_findings: str = Field(default="Unknown", description="Specific numerical/statistical results")
+    contributions: str = Field(default="Unknown", description="Authors' claimed contributions")
+    limitations: str = Field(default="Unknown", description="Authors' stated limitations")
 
     # --- Agent interpretation (clearly separated) ---
-    open_questions: str = Field(
-        default="Unknown", description="Open questions identified by the agent"
-    )
-    relevance_to_review: str = Field(
-        default="Unknown", description="Agent's assessment of relevance to the review"
-    )
-    agent_interpretation: str = Field(
-        default="Unknown", description="Agent's own interpretation of the paper"
-    )
+    open_questions: str = Field(default="Unknown", description="Open questions identified by the agent")
+    relevance_to_review: str = Field(default="Unknown", description="Agent's assessment of relevance to the review")
+    agent_interpretation: str = Field(default="Unknown", description="Agent's own interpretation of the paper")
 
     # --- Evidence pointers ---
     evidence_pointers: list[EvidencePointer] = Field(
@@ -112,9 +88,7 @@ class ResearchNote(BaseModel):
     )
 
     # --- Metadata ---
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(UTC)
-    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     def to_markdown(self) -> str:
         """Render the research note as a Markdown string."""
@@ -170,7 +144,7 @@ class ResearchNote(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class ClaimType(str, Enum):
+class ClaimType(StrEnum):
     EMPIRICAL = "empirical"
     THEORETICAL = "theoretical"
     METHODODOGICAL = "methodological"
@@ -185,19 +159,13 @@ class ExtractedClaim(BaseModel):
     """
 
     claim_text: str = Field(..., min_length=1, description="The substantive claim")
-    claim_type: ClaimType = Field(
-        default=ClaimType.EMPIRICAL, description="Type of the claim"
-    )
-    paper_id: str = Field(
-        ..., description="The paper from which this claim was extracted"
-    )
+    claim_type: ClaimType = Field(default=ClaimType.EMPIRICAL, description="Type of the claim")
+    paper_id: str = Field(..., description="The paper from which this claim was extracted")
     supporting_evidence: list[str] = Field(
         default_factory=list,
         description="Direct quotes or references that support this claim",
     )
-    confidence: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="Confidence in this claim"
-    )
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0, description="Confidence in this claim")
 
 
 # ---------------------------------------------------------------------------
@@ -210,6 +178,4 @@ class CitationRecord(BaseModel):
 
     citing_paper_id: str = Field(..., description="The paper that cites")
     cited_paper_id: str = Field(..., description="The paper being cited")
-    context: str = Field(
-        default="", min_length=0, description="Context in which the citation appears"
-    )
+    context: str = Field(default="", min_length=0, description="Context in which the citation appears")

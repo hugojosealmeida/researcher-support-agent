@@ -1,6 +1,5 @@
 """Tests for research plan model."""
 
-
 from researcher_support_agent.models.research_plan import ResearchPlan, ResearchQuestion
 
 

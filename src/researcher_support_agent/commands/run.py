@@ -18,4 +18,4 @@ def run(state_file: str | None = None, max_retries: int = 3) -> None:
     orch = Orchestrator(state_file=state_file, max_retries=max_retries)
     logger.info("Starting research pipeline")
     result = orch.run_all()
-    logger.info("Pipeline complete", status=result)
+    logger.info("Pipeline complete status=%s", result)

@@ -1,6 +1,5 @@
 """Tests for project model."""
 
-
 from researcher_support_agent.models.project import ProjectStatus, ResearchProject
 
 

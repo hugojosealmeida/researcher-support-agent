@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     """Generic status enum used by many models."""
 
     PENDING = "pending"

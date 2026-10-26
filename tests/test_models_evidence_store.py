@@ -28,9 +28,7 @@ class TestEvidenceRepository:
         db_path = str(tmp_path / "test.db")
         with EvidenceRepository(db_path=db_path) as repo:
             assert repo.db_path == db_path
-            tables = repo._conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            ).fetchall()
+            tables = repo._conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
             table_names = [t["name"] for t in tables]
             assert "papers" in table_names
             assert "research_notes" in table_names

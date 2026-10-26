@@ -1,20 +1,13 @@
 """Tests for the reliability module."""
 
-import json
-import os
-import tempfile
-from pathlib import Path
-
 import pytest
 
 from researcher_support_agent.reliability import (
-    CHECKPOINT_FILE,
     Checkpoint,
     NonRetryableError,
-    PaperResult,
     RateLimiter,
-    RetryPolicy,
     RetryableError,
+    RetryPolicy,
     TokenTracker,
     compute_pdf_checksum,
     load_checkpoint,
@@ -23,10 +16,10 @@ from researcher_support_agent.reliability import (
     save_checkpoint,
 )
 
-
 # ---------------------------------------------------------------------------
 # Sanitization tests
 # ---------------------------------------------------------------------------
+
 
 class TestSanitizePDFText:
     def test_empty_input(self):
@@ -65,6 +58,7 @@ class TestSanitizePDFText:
 # ---------------------------------------------------------------------------
 # Retry policy tests
 # ---------------------------------------------------------------------------
+
 
 class TestRetryPolicy:
     def test_success_first_try(self):
@@ -111,6 +105,7 @@ class TestRetryPolicy:
 # Rate limiter tests
 # ---------------------------------------------------------------------------
 
+
 class TestRateLimiter:
     def test_acquire_within_limit(self):
         limiter = RateLimiter(tokens=5, refill_rate=1000.0)
@@ -121,6 +116,7 @@ class TestRateLimiter:
         limiter = RateLimiter(tokens=1, refill_rate=1000.0)
         limiter.acquire()  # Empty
         import time
+
         time.sleep(0.01)  # Wait for partial refill
         limiter.acquire()  # Should work (partial refill)
 
@@ -129,6 +125,7 @@ class TestRateLimiter:
 # Per-paper error isolation tests
 # ---------------------------------------------------------------------------
 
+
 class TestProcessPapersIsolated:
     def test_all_succeed(self):
         papers = [{"id": i} for i in range(3)]
@@ -136,9 +133,7 @@ class TestProcessPapersIsolated:
         def processor(p):
             return {"id": p["id"], "note": "OK"}
 
-        results = process_papers_isolated(
-            papers, processor, lambda p: str(p["id"])
-        )
+        results = process_papers_isolated(papers, processor, lambda p: str(p["id"]))
         assert len(results) == 3
         assert all(r.success for r in results)
 
@@ -150,9 +145,7 @@ class TestProcessPapersIsolated:
                 raise NonRetryableError("fail on 2")
             return {"id": p["id"]}
 
-        results = process_papers_isolated(
-            papers, selective_fail, lambda p: str(p["id"])
-        )
+        results = process_papers_isolated(papers, selective_fail, lambda p: str(p["id"]))
         assert len(results) == 3
         assert results[0].success is True
         assert results[1].success is False
@@ -164,9 +157,7 @@ class TestProcessPapersIsolated:
         def always_fail(p):
             raise NonRetryableError("always")
 
-        results = process_papers_isolated(
-            papers, always_fail, lambda p: str(p["id"]), max_failures=2
-        )
+        results = process_papers_isolated(papers, always_fail, lambda p: str(p["id"]), max_failures=2)
         assert len(results) == 5  # All papers represented
         assert results[0].success is False
         assert results[1].success is False
@@ -176,6 +167,7 @@ class TestProcessPapersIsolated:
 # ---------------------------------------------------------------------------
 # Token tracker tests
 # ---------------------------------------------------------------------------
+
 
 class TestTokenTracker:
     def test_record_tokens(self):
@@ -209,6 +201,7 @@ class TestTokenTracker:
 # ---------------------------------------------------------------------------
 # Checkpoint tests
 # ---------------------------------------------------------------------------
+
 
 class TestCheckpoint:
     def test_fresh_checkpoint(self, tmp_dir):
@@ -249,12 +242,14 @@ class TestCheckpoint:
 # PDF checksum tests
 # ---------------------------------------------------------------------------
 
+
 class TestComputePDFChecksum:
     def test_known_content(self, tmp_path):
         f = tmp_path / "test.pdf"
         f.write_bytes(b"PDF test content")
         result = compute_pdf_checksum(str(f))
         import hashlib
+
         expected = hashlib.sha256(b"PDF test content").hexdigest()
         assert result == expected
 

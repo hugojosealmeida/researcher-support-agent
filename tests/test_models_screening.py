@@ -1,6 +1,5 @@
 """Tests for screening model."""
 
-
 from researcher_support_agent.models.screening import ScreeningDecision, ScreeningResult
 
 

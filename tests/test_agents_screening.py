@@ -1,6 +1,5 @@
 """Tests for the screening agent."""
 
-
 from researcher_support_agent.agents.screening_agent import ScreeningAgent
 from researcher_support_agent.models.paper import Author, Paper
 from researcher_support_agent.models.screening import ScreeningDecision

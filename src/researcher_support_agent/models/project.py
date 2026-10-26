@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class ProjectStatus(str, Enum):
+class ProjectStatus(StrEnum):
     """Status of a research project."""
 
     ACTIVE = "active"

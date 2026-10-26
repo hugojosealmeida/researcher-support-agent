@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ..models.paper import Paper
-from ..reliability import RateLimiter, RetryPolicy, RetryableError
+from ..reliability import RateLimiter, RetryableError, RetryPolicy
 
 
 class EuropePMCAdapter:
@@ -34,6 +34,8 @@ class EuropePMCAdapter:
 
     def get_paper(self, pmid: str) -> Paper | None:
         """Retrieve a specific paper by PMID."""
+        if self.rate_limiter:
+            self.rate_limiter.acquire()
 
         def _do_get() -> Paper | None:
             return None

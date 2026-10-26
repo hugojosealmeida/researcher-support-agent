@@ -51,9 +51,7 @@ class CitationValidationSkill:
         issues: list[str] = []
         unresolved = manuscript.validate_citations(known_paper_ids)
         for pid in unresolved:
-            issues.append(
-                f"Unresolved citation: '{pid}' is cited in the manuscript but not found in known papers."
-            )
+            issues.append(f"Unresolved citation: '{pid}' is cited in the manuscript but not found in known papers.")
         return issues
 
     def _validate_no_fabrication(
@@ -80,9 +78,7 @@ class CitationValidationSkill:
         seen: set[str] = set()
         for ref_id in manuscript.reference_ids:
             if ref_id in seen:
-                issues.append(
-                    f"Duplicate reference: '{ref_id}' appears multiple times in the bibliography."
-                )
+                issues.append(f"Duplicate reference: '{ref_id}' appears multiple times in the bibliography.")
             seen.add(ref_id)
         return issues
 
@@ -98,16 +94,12 @@ class CitationValidationSkill:
         # Check for papers cited but not in reference list
         missing_refs = cited_ids - set(manuscript.reference_ids)
         if missing_refs:
-            issues.append(
-                f"Papers cited in text but not in reference list: {sorted(missing_refs)}"
-            )
+            issues.append(f"Papers cited in text but not in reference list: {sorted(missing_refs)}")
 
         # Check for reference list entries not cited
         uncited = set(manuscript.reference_ids) - cited_ids
         if uncited:
-            issues.append(
-                f"Bibliography entries not cited in text: {sorted(uncited)}"
-            )
+            issues.append(f"Bibliography entries not cited in text: {sorted(uncited)}")
 
         return issues
 
@@ -121,9 +113,7 @@ class CitationValidationSkill:
         # Check bibliography for duplicates
         dups = self.bibliography.find_duplicates()
         if dups:
-            issues.append(
-                f"Bibliography contains duplicate references: {dups}"
-            )
+            issues.append(f"Bibliography contains duplicate references: {dups}")
 
         return issues
 

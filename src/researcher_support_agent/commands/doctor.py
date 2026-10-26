@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import sys
-
 from ..logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -18,9 +16,6 @@ def doctor(version: str | None = None) -> int:
     logger.info("Running health check...")
 
     # Check Python version
-    if sys.version_info < (3, 11):
-        logger.error("Python 3.11+ is required")
-        return 1
 
     logger.info("Health check passed")
     return 0

@@ -1,6 +1,5 @@
 """Tests for the paper summarizer agent."""
 
-
 from researcher_support_agent.agents.paper_summarizer import (
     PaperSummaryConfig,
     summarize_paper,

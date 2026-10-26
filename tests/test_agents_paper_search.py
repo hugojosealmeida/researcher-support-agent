@@ -1,6 +1,5 @@
 """Tests for the paper search agent."""
 
-
 from researcher_support_agent.agents.paper_search import (
     PaperSearchAgent,
     PaperSearchResult,

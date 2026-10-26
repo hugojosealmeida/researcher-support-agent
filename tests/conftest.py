@@ -50,22 +50,14 @@ def openalex_fixture(tmp_path: Path) -> Path:
                         "author": {
                             "display_name": "Alice Smith",
                             "orcid": "https://orcid.org/0000-0001-2345-6789",
-                            "affiliations": [
-                                {
-                                    "institution": {
-                                        "display_name": "University of Example"
-                                    }
-                                }
-                            ],
+                            "affiliations": [{"institution": {"display_name": "University of Example"}}],
                         }
                     },
                     {"author": {"display_name": "Bob Jones"}},
                 ],
                 "doi": "https://doi.org/10.1234/example",
                 "publication_date": "2023-06-15",
-                "primary_location": {
-                    "source": {"display_name": "Journal of ML"}
-                },
+                "primary_location": {"source": {"display_name": "Journal of ML"}},
                 "abstract_inverted_index": {
                     "deep": [0],
                     "learning": [1],
@@ -78,9 +70,7 @@ def openalex_fixture(tmp_path: Path) -> Path:
                 "authorships": [{"author": {"display_name": "Carol White"}}],
                 "doi": "https://doi.org/10.5678/health",
                 "publication_date": "2024-01-10",
-                "primary_location": {
-                    "source": {"display_name": "Health AI Journal"}
-                },
+                "primary_location": {"source": {"display_name": "Health AI Journal"}},
                 "abstract_inverted_index": None,
             },
         ]
@@ -163,11 +153,7 @@ def europe_pmc_fixture(tmp_path: Path) -> Path:
                     "pmcid": "PMC1234568",
                     "doi": "10.1186/example2",
                     "title": ["Gene Expression Analysis"],
-                    "authorList": {
-                        "author": [
-                            {"forename": "Iris", "surname": "Wang"}
-                        ]
-                    },
+                    "authorList": {"author": [{"forename": "Iris", "surname": "Wang"}]},
                     "publishDate": "2024-02-15",
                     "journalTitle": "Genome Research",
                     "abstractText": "",

@@ -13,7 +13,7 @@ Acceptance criteria:
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
@@ -21,7 +21,7 @@ from ..models.evidence import ResearchNote
 from ..models.paper import Paper
 
 
-class SynthesisFindingType(str, Enum):
+class SynthesisFindingType(StrEnum):
     CONSENSUS = "consensus"
     CONTRADICTION = "contradiction"
     GAP = "gap"
@@ -47,12 +47,12 @@ class SynthesisFinding(BaseModel):
         description="Summary of the evidence base for this finding",
     )
     confidence: float = Field(
-        default=0.0, ge=0.0, le=1.0,
+        default=0.0,
+        ge=0.0,
+        le=1.0,
         description="Confidence in this synthesis finding",
     )
-    notes: str = Field(
-        default="", description="Additional context or caveats"
-    )
+    notes: str = Field(default="", description="Additional context or caveats")
 
     def to_markdown(self) -> str:
         """Render the finding as a Markdown string."""
@@ -85,7 +85,8 @@ class ProposedSection(BaseModel):
     subsections: list[str] = Field(default_factory=list)
     key_papers: list[str] = Field(default_factory=list)
     finding_ids: list[str] = Field(
-        default_factory=list, description="IDs of synthesis findings relevant to this section"
+        default_factory=list,
+        description="IDs of synthesis findings relevant to this section",
     )
 
 
@@ -121,7 +122,7 @@ class LiteratureSynthesisAgent:
     ) -> SynthesisResult:
         """Perform literature synthesis on the given papers and their notes."""
         findings: list[SynthesisFinding] = []
-        paper_ids = [n.paper_id for n in notes]
+        [n.paper_id for n in notes]
 
         # Identify consensus: papers that report similar main results
         consensus_results = self._find_consensus(notes)
@@ -205,16 +206,16 @@ class LiteratureSynthesisAgent:
             main = note.main_results
             if main and main != "Unknown":
                 # Simple keyword-based consensus detection
-                for keyword in ["improves", "effective", "significant", "positive", "reduces"]:
+                for keyword in [
+                    "improves",
+                    "effective",
+                    "significant",
+                    "positive",
+                    "reduces",
+                ]:
                     if keyword in main.lower():
-                        results.setdefault(f"Papers report {keyword} effects", []).append(
-                            note.paper_id
-                        )
-        return [
-            (desc, pids)
-            for desc, pids in results.items()
-            if len(pids) >= 2
-        ]
+                        results.setdefault(f"Papers report {keyword} effects", []).append(note.paper_id)
+        return [(desc, pids) for desc, pids in results.items() if len(pids) >= 2]
 
     def _find_contradictions(self, notes: list[ResearchNote]) -> list[tuple[str, list[str], list[str]]]:
         """Find areas where papers disagree."""
@@ -228,9 +229,7 @@ class LiteratureSynthesisAgent:
                 elif any(w in main.lower() for w in ["negative", "worsens", "ineffective", "no effect"]):
                     negative.append(note.paper_id)
         if positive and negative:
-            return [
-                ("Conflicting effects on outcome", positive, negative)
-            ]
+            return [("Conflicting effects on outcome", positive, negative)]
         return []
 
     def _find_evidence_gaps(self, notes: list[ResearchNote]) -> list[str]:

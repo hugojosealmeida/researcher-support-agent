@@ -1,6 +1,5 @@
 """Tests for the CLI."""
 
-
 from typer.testing import CliRunner
 
 from researcher_support_agent.main import app

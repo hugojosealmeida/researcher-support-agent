@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ..models.paper import Paper
-from ..reliability import RateLimiter, RetryPolicy, RetryableError
+from ..reliability import RateLimiter, RetryableError, RetryPolicy
 
 
 class ArxivAdapter:

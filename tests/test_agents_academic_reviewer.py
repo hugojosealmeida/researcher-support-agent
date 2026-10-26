@@ -84,9 +84,7 @@ class TestAcademicReviewer:
         abstract_findings = report.get_findings_by_pass(ReviewPass.ABSTRACT)
         # Should flag missing purpose/methods/results
         titles = [f.title for f in abstract_findings]
-        assert any("purpose" in t.lower() for t in titles) or any(
-            "methods" in t.lower() for t in titles
-        )
+        assert any("purpose" in t.lower() for t in titles) or any("methods" in t.lower() for t in titles)
 
     def test_review_structure_empty_sections(self, reviewer, sample_manuscript):
         known_ids = {"paper-1"}
@@ -106,10 +104,7 @@ class TestAcademicReviewer:
         known_ids = {"known-paper"}  # unknown-paper is not known
         report = reviewer.review(m, known_ids)
         evidence_findings = report.get_findings_by_pass(ReviewPass.EVIDENCE)
-        assert any(
-            "Unresolved" in f.title or "unresolved" in f.title
-            for f in evidence_findings
-        )
+        assert any("Unresolved" in f.title or "unresolved" in f.title for f in evidence_findings)
 
     def test_review_bibliography_uncited(self, reviewer):
         m = Manuscript.from_template("Test", ManuscriptTemplate.NARRATIVE_REVIEW)
@@ -160,7 +155,7 @@ class TestAcademicReviewer:
         known_ids = {"paper-1", "paper-2"}
         report = reviewer.review(good_manuscript, known_ids)
         # Should have fewer findings than a bad manuscript
-        unresolved = report.get_unresolved()
+        report.get_unresolved()
         critical = report.get_critical_findings()
         assert len(critical) == 0  # No critical findings in a good manuscript
 

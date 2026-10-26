@@ -25,7 +25,8 @@ Thumbs.db
 
 # Generated artifacts
 *.pdf
-*.md  # Only in output directories, not in src/tests
+/outputs/**/*.md
+/manuscript_drafts/**/*.md
 evidence/
 outputs/
 artifacts/

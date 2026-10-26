@@ -26,15 +26,9 @@ from ..reliability import sanitize_pdf_text
 class PaperSummaryConfig(BaseModel):
     """Configuration for paper summarization."""
 
-    include_quantitative_findings: bool = Field(
-        default=True, description="Attempt to extract quantitative findings"
-    )
-    include_evidence_pointers: bool = Field(
-        default=True, description="Generate evidence pointers to sections"
-    )
-    include_agent_interpretation: bool = Field(
-        default=True, description="Include agent's interpretation section"
-    )
+    include_quantitative_findings: bool = Field(default=True, description="Attempt to extract quantitative findings")
+    include_evidence_pointers: bool = Field(default=True, description="Generate evidence pointers to sections")
+    include_agent_interpretation: bool = Field(default=True, description="Include agent's interpretation section")
 
 
 def summarize_paper(
@@ -113,6 +107,7 @@ def summarize_paper(
     if config.include_quantitative_findings and quantitative:
         # Try to find numerical results
         import re
+
         numbers = re.findall(r"\d+\.?\d*\s*(?:%|p\s*<|t\s*=|F\s*=|df\s*=|\(r\s*=\s*\d)", quantitative)
         if numbers:
             quantitative = "Numerical results: " + ", ".join(numbers)
@@ -150,7 +145,4 @@ def summarize_papers(
     """Summarize multiple papers."""
     raw_texts = raw_texts or {}
     config = config or PaperSummaryConfig()
-    return [
-        summarize_paper(p, raw_texts.get(p.title.replace(" ", "_")), config)
-        for p in papers
-    ]
+    return [summarize_paper(p, raw_texts.get(p.title.replace(" ", "_")), config) for p in papers]

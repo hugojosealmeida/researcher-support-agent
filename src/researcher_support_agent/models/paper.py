@@ -29,9 +29,7 @@ class PaperSummary(BaseModel):
     key_findings: list[str] = Field(default_factory=list)
     methods: list[str] = Field(default_factory=list)
     limitations: list[str] = Field(default_factory=list)
-    relevance_score: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="Relevance to research question"
-    )
+    relevance_score: float = Field(default=0.0, ge=0.0, le=1.0, description="Relevance to research question")
 
 
 class PaperStatus(str):
@@ -62,9 +60,7 @@ class Paper(BaseModel):
     processing_status: str = Field(default=PaperStatus.PENDING)
     summary: PaperSummary | None = Field(default=None)
     citations: list[Citation] = Field(default_factory=list)
-    metadata: dict = Field(
-        default_factory=dict, description="Raw or supplemental metadata from source"
-    )
+    metadata: dict = Field(default_factory=dict, description="Raw or supplemental metadata from source")
 
     def get_identifier(self) -> str | None:
         """Return the best available stable identifier."""

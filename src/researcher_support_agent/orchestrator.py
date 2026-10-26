@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -18,7 +18,7 @@ from .logging_config import get_logger
 logger = get_logger(__name__)
 
 
-class Phase(str, Enum):
+class Phase(StrEnum):
     """Pipeline phases in execution order."""
 
     PLAN = "plan"
@@ -40,7 +40,7 @@ PHASE_ORDER = [
 ]
 
 
-class PhaseState(str, Enum):
+class PhaseState(StrEnum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
@@ -52,9 +52,7 @@ class OrchestratorState(BaseModel):
     """Persistable orchestrator state."""
 
     project_id: str = Field(..., description="Project identifier")
-    phases: dict[str, PhaseState] = Field(
-        default_factory=dict, description="Phase name -> status"
-    )
+    phases: dict[str, PhaseState] = Field(default_factory=dict, description="Phase name -> status")
     metadata: dict[str, Any] = Field(default_factory=dict)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
@@ -174,9 +172,7 @@ class Orchestrator:
     def _handle_synthesize(self, phase: Phase, state: OrchestratorState) -> None:
         logger.info("synthesize_phase")
 
-    def _handle_manuscript(
-        self, phase: Phase, state: OrchestratorState
-    ) -> None:
+    def _handle_manuscript(self, phase: Phase, state: OrchestratorState) -> None:
         logger.info("manuscript_phase")
 
     def dry_run(self) -> dict[str, bool]:

@@ -104,7 +104,8 @@ class AcademicReviewer:
                     location="abstract",
                     severity=Severity.CRITICAL,
                     title="Missing abstract section",
-                    rationale="A manuscript must have an abstract that summarizes aims, methods, results, and conclusions.",
+                    rationale="A manuscript must have an abstract that summarizes aims, methods, "
+                    "results, and conclusions.",
                     suggested_correction="Add an abstract section with the four key elements.",
                 )
             )
@@ -119,7 +120,8 @@ class AcademicReviewer:
                     severity=Severity.CRITICAL,
                     title="Empty abstract",
                     rationale="The abstract section exists but has no content.",
-                    suggested_correction="Write an abstract summarizing the review's purpose, methods, results, and conclusions.",
+                    suggested_correction="Write an abstract summarizing the review's purpose, methods, "
+                    "results, and conclusions.",
                 )
             )
             return findings
@@ -170,7 +172,14 @@ class AcademicReviewer:
         section_names = list(manuscript.sections.keys())
 
         # Check for required sections
-        required_sections = ["abstract", "introduction", "methods", "results", "discussion", "conclusion"]
+        required_sections = [
+            "abstract",
+            "introduction",
+            "methods",
+            "results",
+            "discussion",
+            "conclusion",
+        ]
         missing = [s for s in required_sections if s not in manuscript.sections]
         if missing:
             findings.append(
@@ -210,16 +219,15 @@ class AcademicReviewer:
                         location="structure",
                         severity=Severity.MINOR,
                         title="Section order may not follow standard flow",
-                        rationale="Sections should follow a logical order: abstract, introduction, methods, results, discussion, conclusion.",
+                        rationale="Sections should follow a logical order: abstract, introduction, "
+                        "methods, results, discussion, conclusion.",
                         suggested_correction="Reorder sections to follow the standard manuscript flow.",
                     )
                 )
 
         return findings
 
-    def _review_evidence(
-        self, manuscript: Manuscript, known_paper_ids: set[str]
-    ) -> list[AcademicReviewFinding]:
+    def _review_evidence(self, manuscript: Manuscript, known_paper_ids: set[str]) -> list[AcademicReviewFinding]:
         """Review evidence: unsupported claims, overgeneralization, contradictions, missing citations."""
         findings: list[AcademicReviewFinding] = []
 
@@ -232,8 +240,10 @@ class AcademicReviewer:
                     location="citation",
                     severity=Severity.CRITICAL,
                     title=f"Unresolved citations: {', '.join(unresolved)}",
-                    rationale="Citations in the manuscript must resolve to known papers. These citations do not match any verified paper.",
-                    suggested_correction=f"Replace or remove citations: {', '.join(unresolved)}. Add the corresponding papers to the evidence repository.",
+                    rationale="Citations in the manuscript must resolve to known papers. "
+                    "These citations do not match any verified paper.",
+                    suggested_correction=f"Replace or remove citations: {', '.join(unresolved)}. "
+                    "Add the corresponding papers to the evidence repository.",
                 )
             )
 
@@ -254,7 +264,14 @@ class AcademicReviewer:
                 )
 
         # Check for overgeneralization indicators
-        overgeneral_keywords = ["all", "every", "always", "never", "no study", "no evidence"]
+        overgeneral_keywords = [
+            "all",
+            "every",
+            "always",
+            "never",
+            "no study",
+            "no evidence",
+        ]
         for name, section in manuscript.sections.items():
             content = section.content.lower()
             for kw in overgeneral_keywords:
@@ -266,7 +283,8 @@ class AcademicReviewer:
                             severity=Severity.MINOR,
                             title=f"Potential overgeneralization in '{name}'",
                             rationale=f"The term '{kw}' may indicate overgeneralization without sufficient evidence.",
-                            suggested_correction=f"Review claims in '{name}' that use '{kw}' and ensure they are properly supported.",
+                            suggested_correction=f"Review claims in '{name}' that use '{kw}' and "
+                            "ensure they are properly supported.",
                         )
                     )
                     break  # One per section
@@ -306,7 +324,8 @@ class AcademicReviewer:
                         location="bibliography",
                         severity=Severity.CRITICAL,
                         title=f"Reference '{ref_id}' not in known paper set",
-                        rationale="All references must resolve to verified papers. This reference is not found in the evidence repository.",
+                        rationale="All references must resolve to verified papers. "
+                        "This reference is not found in the evidence repository.",
                         suggested_correction=f"Verify '{ref_id}' exists in the evidence repository or remove it.",
                     )
                 )
@@ -372,7 +391,8 @@ class AcademicReviewer:
                         location=name,
                         severity=Severity.MINOR,
                         title=f"Section '{name}' may be too brief for adequate depth",
-                        rationale=f"The {name} section has only {len(section.content)} characters, which may be insufficient for thorough coverage.",
+                        rationale=f"The {name} section has only {len(section.content)} characters, "
+                        "which may be insufficient for thorough coverage.",
                         suggested_correction=f"Expand the '{name}' section with more detailed content.",
                     )
                 )
@@ -395,8 +415,10 @@ class AcademicReviewer:
                     location="manuscript",
                     severity=Severity.CRITICAL,
                     title="Potential fabricated references",
-                    rationale=f"The following paper IDs are cited but not found in the evidence repository: {', '.join(fabricated)}. This may indicate fabricated or unverified references.",
-                    suggested_correction="Verify each reference against the evidence repository. Remove any that cannot be verified.",
+                    rationale=f"The following paper IDs are cited but not found in the evidence repository: "
+                    f"{', '.join(fabricated)}. This may indicate fabricated or unverified references.",
+                    suggested_correction="Verify each reference against the evidence repository. "
+                    "Remove any that cannot be verified.",
                 )
             )
 

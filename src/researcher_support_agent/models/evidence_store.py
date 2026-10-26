@@ -203,9 +203,7 @@ class EvidenceRepository:
 
     def get_paper(self, paper_id: str) -> dict | None:
         """Retrieve a paper by ID."""
-        row = self._conn.execute(
-            "SELECT * FROM papers WHERE id = ?", (paper_id,)
-        ).fetchone()
+        row = self._conn.execute("SELECT * FROM papers WHERE id = ?", (paper_id,)).fetchone()
         if row is None:
             return None
         d = dict(row)
@@ -404,9 +402,7 @@ class EvidenceRepository:
 
     def get_evidence_for_claim(self, claim: str) -> list[Evidence]:
         """Retrieve all evidence records for a given claim."""
-        rows = self._conn.execute(
-            "SELECT * FROM evidence WHERE claim = ?", (claim,)
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM evidence WHERE claim = ?", (claim,)).fetchall()
         result = []
         for row in rows:
             d = dict(row)
@@ -441,20 +437,20 @@ class EvidenceRepository:
 
     def get_evidence_pointers(self, paper_id: str) -> list[EvidencePointer]:
         """Retrieve all evidence pointers for a paper."""
-        rows = self._conn.execute(
-            "SELECT * FROM evidence_pointers WHERE paper_id = ?", (paper_id,)
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM evidence_pointers WHERE paper_id = ?", (paper_id,)).fetchall()
         result = []
         for row in rows:
             d = dict(row)
-            result.append(EvidencePointer(
-                paper_id=d["paper_id"],
-                section=d.get("section"),
-                page=d.get("page"),
-                table=d.get("table_ref"),
-                figure=d.get("figure_ref"),
-                description=d["description"],
-            ))
+            result.append(
+                EvidencePointer(
+                    paper_id=d["paper_id"],
+                    section=d.get("section"),
+                    page=d.get("page"),
+                    table=d.get("table_ref"),
+                    figure=d.get("figure_ref"),
+                    description=d["description"],
+                )
+            )
         return result
 
     # ------------------------------------------------------------------
@@ -479,9 +475,7 @@ class EvidenceRepository:
 
     def get_citations_from(self, paper_id: str) -> list[CitationRecord]:
         """Get all papers cited by a given paper."""
-        rows = self._conn.execute(
-            "SELECT * FROM citations WHERE citing_paper_id = ?", (paper_id,)
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM citations WHERE citing_paper_id = ?", (paper_id,)).fetchall()
         return [
             CitationRecord(
                 citing_paper_id=row["citing_paper_id"],
@@ -493,9 +487,7 @@ class EvidenceRepository:
 
     def get_citations_to(self, paper_id: str) -> list[CitationRecord]:
         """Get all papers that cite a given paper."""
-        rows = self._conn.execute(
-            "SELECT * FROM citations WHERE cited_paper_id = ?", (paper_id,)
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM citations WHERE cited_paper_id = ?", (paper_id,)).fetchall()
         return [
             CitationRecord(
                 citing_paper_id=row["citing_paper_id"],
@@ -512,6 +504,7 @@ class EvidenceRepository:
     def store_review_finding(self, finding: ReviewFinding) -> None:
         """Store a review finding."""
         import uuid
+
         self._conn.execute(
             """
             INSERT INTO review_findings (id, category, severity, description, resolution, paper_id, created_at)
@@ -531,9 +524,7 @@ class EvidenceRepository:
 
     def get_review_findings(self, paper_id: str) -> list[ReviewFinding]:
         """Get review findings for a paper."""
-        rows = self._conn.execute(
-            "SELECT * FROM review_findings WHERE paper_id = ?", (paper_id,)
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM review_findings WHERE paper_id = ?", (paper_id,)).fetchall()
         return [
             ReviewFinding(
                 category=row["category"],

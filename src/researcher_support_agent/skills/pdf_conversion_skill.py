@@ -55,7 +55,7 @@ def _extract_text_simple(pdf_path: str) -> str:
     """
     # Try PyMuPDF
     try:
-        import fitz  # type: ignore
+        import fitz
 
         doc = fitz.open(pdf_path)
         parts: list[str] = []
@@ -69,7 +69,7 @@ def _extract_text_simple(pdf_path: str) -> str:
 
     # Try pdfplumber
     try:
-        import pdfplumber  # type: ignore
+        import pdfplumber
 
         text_parts: list[str] = []
         with pdfplumber.open(pdf_path) as pdf:
