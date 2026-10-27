@@ -48,10 +48,15 @@ class EuropePMCAdapter(SourceAdapter):
         return f"{BASE_URL}/search?{urlencode(params)}"
 
     def _parse_paper(self, record: dict[str, Any]) -> Paper | None:
-        title = record.get("title", [])
-        if not title:
-            return None
-        title_text = title[0] if title else None
+        from collections.abc import Sequence
+
+        title = record.get("title")
+        if isinstance(title, str):
+            title_text = title
+        elif isinstance(title, Sequence) and not isinstance(title, (bytes, bytearray)):
+            title_text = title[0] if len(title) else None
+        else:
+            title_text = None
         if not title_text:
             return None
 
