@@ -64,10 +64,8 @@ class TestPipelineRegistration:
 
 
 class TestPipelineFullWorkflow:
-    def _build_pipeline(self) -> tuple[Pipeline, Path]:
-        tmp_path = Path(__file__).parent / "tmp_pipeline_test"
-        tmp_path.mkdir(exist_ok=True)
-        p = Pipeline(state_file=str(tmp_path / "state.json"))
+    def _build_pipeline(self, state_file: Path) -> Pipeline:
+        p = Pipeline(state_file=str(state_file))
         p.register_agent(PlanningAgent(topic="Gene Therapy"))
         p.register_agent(LiteratureSearchAgent())
         p.register_agent(PaperIngestionAgent())
@@ -76,16 +74,16 @@ class TestPipelineFullWorkflow:
         p.register_agent(ReviewPaperWriterAgent())
         p.register_agent(AcademicReviewerAgent())
         p.register_agent(RevisionReleaseAgent())
-        return p, tmp_path
+        return p
 
-    def test_run_full_executes_all_phases(self) -> None:
-        p, _tmp_path = self._build_pipeline()
+    def test_run_full_executes_all_phases(self, tmp_path: Path) -> None:
+        p = self._build_pipeline(tmp_path / "state.json")
         result = p.run_full()
         assert result.topic == "Gene Therapy"
         assert result.completed_phases == Pipeline.VALID_PHASES
 
-    def test_run_from_executes_subset(self) -> None:
-        p, _tmp_path = self._build_pipeline()
+    def test_run_from_executes_subset(self, tmp_path: Path) -> None:
+        p = self._build_pipeline(tmp_path / "state.json")
 
         # First run planning only
         p.run_phase("planning")
@@ -102,8 +100,8 @@ class TestPipelineFullWorkflow:
         ]
         assert result.completed_phases == ["planning", *remaining]
 
-    def test_run_full_overrides_external_state(self) -> None:
-        p, _tmp_path = self._build_pipeline()
+    def test_run_full_overrides_external_state(self, tmp_path: Path) -> None:
+        p = self._build_pipeline(tmp_path / "state.json")
         ext = PipelineState()
         ext.topic = "External"
         ext.completed_phases = ["planning"]
@@ -111,6 +109,37 @@ class TestPipelineFullWorkflow:
         result = p.run_full(state=ext)
         assert result.topic == "Gene Therapy"  # overwritten by PlanningAgent
         assert result.completed_phases == Pipeline.VALID_PHASES
+
+    def test_run_full_writes_only_configured_state_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """State goes to the configured ``state_file`` only — never to a
+        hardcoded ``pipeline_state.json`` in the CWD (issue #39)."""
+        cwd = tmp_path / "cwd"
+        cwd.mkdir()
+        monkeypatch.chdir(cwd)
+        state_file = tmp_path / "custom.json"
+
+        p = self._build_pipeline(state_file)
+        p.run_full()
+
+        assert state_file.exists()
+        assert not (cwd / "pipeline_state.json").exists()
+
+    def test_run_phase_writes_only_configured_state_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cwd = tmp_path / "cwd"
+        cwd.mkdir()
+        monkeypatch.chdir(cwd)
+        state_file = tmp_path / "custom.json"
+
+        p = Pipeline(state_file=str(state_file))
+        p.register_agent(PlanningAgent(topic="Gene Therapy"))
+        p.run_phase("planning")
+
+        assert state_file.exists()
+        assert not (cwd / "pipeline_state.json").exists()
 
 
 class TestPipelineStatePersistence:
@@ -122,6 +151,28 @@ class TestPipelineStatePersistence:
 
         content = (tmp_path / "state.json").read_text()
         assert "Persisted" in content
+
+    def test_ephemeral_pipeline_writes_no_state_file(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """``state_file=None`` means state is ephemeral: nothing hits disk."""
+        cwd = tmp_path / "cwd"
+        cwd.mkdir()
+        monkeypatch.chdir(cwd)
+
+        p = Pipeline(state_file=None)
+        p.register_agent(PlanningAgent(topic="Gene Therapy"))
+        p.register_agent(LiteratureSearchAgent())
+        p.register_agent(PaperIngestionAgent())
+        p.register_agent(PaperSummarizationAgent())
+        p.register_agent(LiteratureSynthesisAgent())
+        p.register_agent(ReviewPaperWriterAgent())
+        p.register_agent(AcademicReviewerAgent())
+        p.register_agent(RevisionReleaseAgent())
+        result = p.run_full()
+
+        assert result.topic == "Gene Therapy"
+        assert list(cwd.iterdir()) == []
 
     def test_state_loaded_into_pipeline(self, tmp_path: Path) -> None:
         # Create initial state file

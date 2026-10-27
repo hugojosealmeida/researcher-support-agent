@@ -26,5 +26,4 @@ class AcademicReviewerAgent(PipelineAgent):
         if isinstance(self.passed, bool):
             state.review_passed = self.passed
 
-        state.save("pipeline_state.json")
         return state

@@ -1,5 +1,9 @@
 """Tests for all 8 pipeline agents."""
 
+from pathlib import Path
+
+import pytest
+
 from research_pipeline.agents import (
     AcademicReviewerAgent,
     LiteratureSearchAgent,
@@ -242,3 +246,37 @@ class TestRevisionReleaseAgent:
         assert result.final_manuscript == "Old final"
         assert result.version == "1.0"
         assert result.published is False
+
+
+# ------------------------------------------------------------------ #
+#  Persistence ownership (issue #39)                                   #
+# ------------------------------------------------------------------ #
+
+
+ALL_AGENTS = [
+    PlanningAgent(topic="T"),
+    LiteratureSearchAgent(),
+    PaperIngestionAgent(),
+    PaperSummarizationAgent(),
+    LiteratureSynthesisAgent(),
+    ReviewPaperWriterAgent(),
+    AcademicReviewerAgent(),
+    RevisionReleaseAgent(),
+]
+
+
+class TestAgentsDoNotPersistState:
+    """Agents must not write state files; ``Pipeline`` owns persistence
+    honouring its configured ``state_file``."""
+
+    @pytest.mark.parametrize("agent", ALL_AGENTS, ids=lambda a: a.name)
+    def test_run_writes_no_files(
+        self, agent, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cwd = tmp_path / "cwd"
+        cwd.mkdir()
+        monkeypatch.chdir(cwd)
+
+        agent.run(PipelineState())
+
+        assert list(cwd.iterdir()) == []
