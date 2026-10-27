@@ -1,5 +1,6 @@
-"""Agent module — exposes all phase agents for easy import."""
+"""Agent package — exposes the base class and all phase agents."""
 
+from research_pipeline.agent_base import PipelineAgent
 from research_pipeline.agents.academic_reviewer_agent import AcademicReviewerAgent
 from research_pipeline.agents.literature_search_agent import LiteratureSearchAgent
 from research_pipeline.agents.literature_synthesis_agent import LiteratureSynthesisAgent
@@ -15,6 +16,7 @@ __all__ = [
     "LiteratureSynthesisAgent",
     "PaperIngestionAgent",
     "PaperSummarizationAgent",
+    "PipelineAgent",
     "PlanningAgent",
     "ReviewPaperWriterAgent",
     "RevisionReleaseAgent",
