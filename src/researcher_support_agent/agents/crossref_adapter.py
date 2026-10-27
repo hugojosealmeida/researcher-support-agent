@@ -8,7 +8,7 @@ from typing import Any, cast
 from ..models.paper import Author, Paper
 from ..models.query import SearchQuery
 from ..reliability import RateLimiter, RetryableError, RetryPolicy
-from .http_client import get_http_client
+from .http_client import get_http_client, http_get
 from .paper_search import SourceAdapter
 
 BASE_URL = "https://api.crossref.org/works"
@@ -125,8 +125,7 @@ class CrossrefAdapter(SourceAdapter):
                     pass
 
             client = get_http_client(self.source_name)
-            resp = client.get(url, timeout=30)
-            resp.raise_for_status()
+            resp = http_get(client, url, source_name=self.source_name)
             data = resp.json()
             message = data.get("message", {})
             query.results_count = message.get("total-results", 0)
