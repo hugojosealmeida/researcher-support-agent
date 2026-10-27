@@ -89,7 +89,7 @@ class TestEndToEndPipeline:
 
         # Step 3: Summarize
         note = summarize_paper(PAPER_A)
-        assert note.paper_id == "Deep_Learning_for_Natural_Language_Processing"
+        assert note.paper_id == "10.1234/example-dl-nlp"
         assert note.title == "Deep Learning for Natural Language Processing"
 
         # Step 4: Evidence store

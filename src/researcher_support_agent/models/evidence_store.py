@@ -265,6 +265,7 @@ class EvidenceRepository:
         if self.artifacts_dir:
             Path(self.artifacts_dir).mkdir(parents=True, exist_ok=True)
             md_path = Path(self.artifacts_dir) / f"note_{note.paper_id}.md"
+            md_path.parent.mkdir(parents=True, exist_ok=True)
             md_path.write_text(note.to_markdown(), encoding="utf-8")
 
         self._conn.commit()

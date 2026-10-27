@@ -154,3 +154,37 @@ class TestManuscriptWriter:
         # Check all references are from known papers
         for ref_id in result.manuscript.reference_ids:
             assert ref_id in known_paper_ids, f"Fabricated reference: {ref_id}"
+
+    def test_stable_ids_used_for_paper_lookup(self, writer):
+        from datetime import UTC, datetime
+
+        from researcher_support_agent.models.evidence import ResearchNote
+
+        papers = [
+            Paper(
+                title="Paper A",
+                authors=[Author(full_name="Alice Smith")],
+                year=2023,
+                doi="10.1/a",
+                abstract="Paper A studies X.",
+            ),
+        ]
+        notes = [
+            ResearchNote(
+                paper_id="10.1/a",
+                title="Paper A",
+                year=2023,
+                methodology="Survey with 100 participants.",
+                main_results="X improves Y.",
+                agent_interpretation="Important finding.",
+                created_at=datetime.now(UTC),
+            ),
+        ]
+        result = writer.write(
+            title="Test Review",
+            synthesis_notes=notes,
+            papers=papers,
+        )
+        known_paper_ids = {paper.get_paper_id() for paper in papers}
+        for ref_id in result.manuscript.reference_ids:
+            assert ref_id in known_paper_ids, f"Fabricated reference: {ref_id}"

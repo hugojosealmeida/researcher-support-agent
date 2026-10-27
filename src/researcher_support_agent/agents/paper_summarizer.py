@@ -95,7 +95,7 @@ def summarize_paper(
         for section_name in sections:
             evidence_pointers.append(
                 EvidencePointer(
-                    paper_id=paper.title.replace(" ", "_"),
+                    paper_id=paper.get_paper_id(),
                     section=section_name,
                     description=f"Content found in {section_name} section",
                 )
@@ -103,7 +103,7 @@ def summarize_paper(
 
     # Build research note
     title = paper.title
-    paper_id = title.replace(" ", "_") if title else "Unknown"
+    paper_id = paper.get_paper_id()
 
     # Try to extract from raw text, fall back to abstract, then Unknown
     methodology = sections.get("Methodology", sections.get("Methods", "Unknown"))
@@ -163,7 +163,15 @@ def summarize_papers(
     """Summarize multiple papers."""
     raw_texts = raw_texts or {}
     config = config or PaperSummaryConfig()
-    return [
-        summarize_paper(p, raw_texts.get(p.title.replace(" ", "_")), config)
-        for p in papers
-    ]
+    notes = []
+    for p in papers:
+        stable = p.get_identifier()
+        slug = p.title.replace(" ", "_") if p.title else "Unknown"
+        if stable is not None and stable in raw_texts:
+            raw_text = raw_texts[stable]
+        elif slug in raw_texts:
+            raw_text = raw_texts[slug]
+        else:
+            raw_text = None
+        notes.append(summarize_paper(p, raw_text, config))
+    return notes
