@@ -76,8 +76,6 @@ class Paper(BaseModel):
             return self.pmid
         if self.arxiv_id:
             return self.arxiv_id
-        if self.source_id:
-            return self.source_id
         return None
 
     def get_paper_id(self) -> str:
@@ -85,5 +83,7 @@ class Paper(BaseModel):
         identifier = self.get_identifier()
         if identifier:
             return identifier
+        if self.source_id:
+            return self.source_id
         title = self.title
-        return title.replace(" ", "_") if title else "Unknown"
+        return title.replace(" ", "_") if title else "unknown"

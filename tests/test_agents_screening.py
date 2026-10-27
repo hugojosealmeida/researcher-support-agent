@@ -54,3 +54,55 @@ class TestScreeningAgent:
         )
         result = agent.screen(paper)
         assert result.decision == ScreeningDecision.INCLUDE
+
+
+class TestScreeningAgentInclusionAndStableId:
+    def test_exclude_keyword_in_abstract(self):
+        agent = ScreeningAgent(exclusion_criteria="animal")
+        paper = Paper(
+            title="Clinical Trial of X",
+            authors=[Author(full_name="Alice")],
+            abstract="This is an animal study.",
+        )
+        result = agent.screen(paper)
+        assert result.decision == ScreeningDecision.EXCLUDE
+        assert "Excluded" in result.reason
+
+    def test_inclusion_enforced_when_not_met(self):
+        agent = ScreeningAgent(inclusion_criteria="randomized")
+        paper = Paper(
+            title="Observational Study",
+            authors=[Author(full_name="Alice")],
+            abstract="No randomization performed.",
+        )
+        result = agent.screen(paper)
+        assert result.decision == ScreeningDecision.EXCLUDE
+
+    def test_inclusion_in_abstract(self):
+        agent = ScreeningAgent(inclusion_criteria="randomized")
+        paper = Paper(
+            title="Trial",
+            authors=[Author(full_name="Alice")],
+            abstract="A randomized controlled trial.",
+        )
+        result = agent.screen(paper)
+        assert result.decision == ScreeningDecision.INCLUDE
+
+    def test_paper_id_uses_stable_identifier(self):
+        agent = ScreeningAgent()
+        paper = Paper(
+            title="Test Paper",
+            authors=[Author(full_name="Alice")],
+            doi="10.1234/test",
+        )
+        result = agent.screen(paper)
+        assert result.paper_id == "10.1234/test"
+
+    def test_paper_id_falls_back_to_title_slug(self):
+        agent = ScreeningAgent()
+        paper = Paper(
+            title="Test Paper",
+            authors=[Author(full_name="Alice")],
+        )
+        result = agent.screen(paper)
+        assert result.paper_id == "Test_Paper"

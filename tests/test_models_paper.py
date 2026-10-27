@@ -58,3 +58,33 @@ class TestPaper:
 
         with pytest.raises(ValidationError):
             Paper(title="")
+
+
+class TestPaperGetPaperId:
+    def test_get_paper_id_doi(self):
+        p = Paper(title="Test", doi="10.1234/test")
+        assert p.get_paper_id() == "10.1234/test"
+
+    def test_get_paper_id_pmid(self):
+        p = Paper(title="Test", pmid="36000001")
+        assert p.get_paper_id() == "36000001"
+
+    def test_get_paper_id_arxiv(self):
+        p = Paper(title="Test", arxiv_id="2301.12345")
+        assert p.get_paper_id() == "2301.12345"
+
+    def test_get_paper_id_priority(self):
+        p = Paper(title="Test", doi="10.1234/d", pmid="360", arxiv_id="2301.12345")
+        assert p.get_paper_id() == "10.1234/d"
+
+    def test_get_paper_id_priority_source_id(self):
+        p = Paper(title="Test", arxiv_id="2301.12345", source_id="src-123")
+        assert p.get_paper_id() == "2301.12345"
+
+    def test_get_paper_id_source_id(self):
+        p = Paper(title="Test", source_id="src-123")
+        assert p.get_paper_id() == "src-123"
+
+    def test_get_paper_id_fallback_title_slug(self):
+        p = Paper(title="Test Paper")
+        assert p.get_paper_id() == "Test_Paper"
