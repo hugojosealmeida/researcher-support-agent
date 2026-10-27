@@ -9,6 +9,7 @@ from typing import Any, cast
 from ..models.paper import Author, Paper
 from ..models.query import SearchQuery
 from ..reliability import RateLimiter, RetryableError, RetryPolicy
+from .http_client import get_http_client
 from .paper_search import SourceAdapter
 
 BASE_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest"
@@ -123,18 +124,14 @@ class EuropePMCAdapter(SourceAdapter):
                 except FileNotFoundError:
                     pass
 
-            try:
-                import requests
-
-                resp = requests.get(url, timeout=30)
-                resp.raise_for_status()
-                data = resp.json()
-                query.results_count = int(data.get("resultCount", 0))
-                return cast(
-                    list[dict[str, Any]], data.get("resultList", {}).get("result", [])
-                )
-            except ImportError:
-                return []
+            client = get_http_client(self.source_name)
+            resp = client.get(url, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            query.results_count = int(data.get("resultCount", 0))
+            return cast(
+                list[dict[str, Any]], data.get("resultList", {}).get("result", [])
+            )
 
         return self.retry_policy.execute(_do_search)
 

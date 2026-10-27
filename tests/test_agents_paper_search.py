@@ -1,7 +1,12 @@
 """Tests for the paper search agent and adapters."""
 
+import inspect
 import os
+from typing import Any
 
+import pytest
+
+from researcher_support_agent.agents import http_client
 from researcher_support_agent.agents.arxiv_adapter import ArxivAdapter
 from researcher_support_agent.agents.crossref_adapter import CrossrefAdapter
 from researcher_support_agent.agents.europe_pmc_adapter import EuropePMCAdapter
@@ -13,6 +18,30 @@ from researcher_support_agent.agents.paper_search import (
 )
 from researcher_support_agent.models.paper import Paper
 from researcher_support_agent.models.query import SearchQuery
+from researcher_support_agent.reliability import NonRetryableError
+
+ALL_ADAPTERS = [
+    OpenAlexAdapter,
+    CrossrefAdapter,
+    ArxivAdapter,
+    EuropePMCAdapter,
+]
+
+# Adapter search() short-circuits to a fixture file when these are set, so
+# tests that exercise the live HTTP path must make sure none of them leak in.
+FIXTURE_ENV_VARS = [
+    "OPENALEX_FIXTURE",
+    "CROSSREF_FIXTURE",
+    "ARXIV_FIXTURE",
+    "EUROPEPMC_FIXTURE",
+]
+
+
+@pytest.fixture()
+def no_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Force every adapter down its live-HTTP code path."""
+    for name in FIXTURE_ENV_VARS:
+        monkeypatch.delenv(name, raising=False)
 
 
 class TestDeduplication:
@@ -295,3 +324,185 @@ class TestPaperSearchAgentBasic:
         assert len(results) == 2
         for r in results:
             assert isinstance(r, PaperSearchResult)
+
+
+class TestHttpGetClient:
+    def test_returns_library_when_available(self, monkeypatch: pytest.MonkeyPatch):
+        sentinel = object()
+        monkeypatch.setattr(http_client, "REQUESTS_AVAILABLE", True)
+        monkeypatch.setattr(http_client, "requests", sentinel, raising=False)
+        assert http_client.get_http_client("crossref") is sentinel
+
+    def test_raises_when_library_missing(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(http_client, "REQUESTS_AVAILABLE", False)
+        with pytest.raises(NonRetryableError, match="requests"):
+            http_client.get_http_client("crossref")
+
+    def test_missing_library_error_names_the_source(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        monkeypatch.setattr(http_client, "REQUESTS_AVAILABLE", False)
+        with pytest.raises(NonRetryableError, match="for the arxiv API"):
+            http_client.get_http_client("arxiv")
+
+
+class TestHttpLibraryMissing:
+    """A missing HTTP library must be loud, never an empty result list.
+
+    Regression coverage for the silent ``except ImportError: return []``
+    fallback that made live searches look like "zero papers found".
+    """
+
+    @pytest.mark.parametrize("adapter_class", ALL_ADAPTERS)
+    def test_search_raises_instead_of_returning_empty(
+        self,
+        adapter_class: type,
+        monkeypatch: pytest.MonkeyPatch,
+        no_fixtures: None,
+    ):
+        monkeypatch.setattr(http_client, "REQUESTS_AVAILABLE", False)
+
+        adapter = adapter_class()
+        query = SearchQuery(terms=["deep learning"], query="deep learning")
+        with pytest.raises(NonRetryableError) as excinfo:
+            adapter.search(query)
+        assert "not installed" in str(excinfo.value)
+
+    @pytest.mark.parametrize("adapter_class", ALL_ADAPTERS)
+    def test_adapters_do_not_swallow_import_error(self, adapter_class: type):
+        """Guards against reintroducing the silent ImportError fallback."""
+        source = inspect.getsource(adapter_class)
+        assert "except ImportError" not in source
+
+
+ARXIV_ATOM = b"""<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+  <opensearch:totalResults>42</opensearch:totalResults>
+  <entry>
+    <title>Attention Is All You Need Revisited</title>
+    <id>http://arxiv.org/abs/2301.12345</id>
+    <summary>We revisit the attention mechanism.</summary>
+    <published>2023-01-25T00:00:00Z</published>
+    <author><name>Jack Chen</name></author>
+  </entry>
+</feed>"""
+
+
+class _FakeResponse:
+    def __init__(self, payload: Any = None, content: bytes = b"") -> None:
+        self._payload = payload
+        self.content = content
+
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self) -> Any:
+        return self._payload
+
+
+class _FakeRequests:
+    """Stand-in for the ``requests`` module on the live code path."""
+
+    def __init__(self, response: _FakeResponse) -> None:
+        self.response = response
+        self.calls: list[tuple[str, Any]] = []
+
+    def get(self, url: str, timeout: Any = None) -> _FakeResponse:
+        assert timeout is not None, "live HTTP calls must set a timeout"
+        self.calls.append((url, timeout))
+        return self.response
+
+
+class TestLiveHttpSearch:
+    """The live (non-fixture) code path is reachable now that ``requests`` is
+    a declared dependency."""
+
+    @pytest.mark.parametrize(
+        "adapter_class,payload,content,expected_count",
+        [
+            (
+                OpenAlexAdapter,
+                {
+                    "count": 12,
+                    "results": [{"id": "W1234567", "title": "Deep Learning for NLP"}],
+                },
+                b"",
+                12,
+            ),
+            (
+                CrossrefAdapter,
+                {
+                    "message": {
+                        "total-results": 7,
+                        "items": [{"DOI": "10.9999/clinical", "title": ["Clinical"]}],
+                    }
+                },
+                b"",
+                7,
+            ),
+            (
+                EuropePMCAdapter,
+                {
+                    "resultCount": 5,
+                    "resultList": {
+                        "result": [{"pmid": "36000001", "title": ["Protein"]}]
+                    },
+                },
+                b"",
+                5,
+            ),
+            (ArxivAdapter, None, ARXIV_ATOM, None),
+        ],
+    )
+    def test_search_calls_api_and_parses_results(
+        self,
+        adapter_class: type,
+        payload: Any,
+        content: bytes,
+        expected_count: int | None,
+        monkeypatch: pytest.MonkeyPatch,
+        no_fixtures: None,
+    ):
+        fake = _FakeRequests(_FakeResponse(payload=payload, content=content))
+        monkeypatch.setattr(http_client, "REQUESTS_AVAILABLE", True)
+        monkeypatch.setattr(http_client, "requests", fake, raising=False)
+
+        adapter = adapter_class()
+        query = SearchQuery(terms=["test"], query="test")
+        raw = adapter.search(query)
+
+        assert len(fake.calls) == 1
+        assert raw, "live search must return the API results"
+        if adapter_class is ArxivAdapter:
+            assert raw[0]["title"] == "Attention Is All You Need Revisited"
+            assert raw[0]["authors"] == [{"name": "Jack Chen"}]
+        else:
+            assert query.results_count == expected_count
+
+    def test_agent_aggregates_live_results(
+        self, monkeypatch: pytest.MonkeyPatch, no_fixtures: None
+    ):
+        fake = _FakeRequests(
+            _FakeResponse(
+                payload={
+                    "message": {
+                        "total-results": 1,
+                        "items": [
+                            {
+                                "DOI": "10.9999/live",
+                                "title": ["Live Result"],
+                                "author": [{"given": "Ada", "family": "Lovelace"}],
+                            }
+                        ],
+                    }
+                }
+            )
+        )
+        monkeypatch.setattr(http_client, "REQUESTS_AVAILABLE", True)
+        monkeypatch.setattr(http_client, "requests", fake, raising=False)
+
+        agent = PaperSearchAgent(adapters=[CrossrefAdapter()], max_pages=1)
+        papers = agent.search("live query")
+        assert [p.title for p in papers] == ["Live Result"]
+        assert papers[0].authors[0].full_name == "Ada Lovelace"

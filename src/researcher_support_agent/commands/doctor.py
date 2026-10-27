@@ -44,7 +44,7 @@ def doctor(
     )
 
     # 2. Required packages
-    required = ["typer", "pydantic", "structlog"]
+    required = ["typer", "pydantic", "requests", "structlog"]
     for pkg in required:
         try:
             mod = importlib.import_module(pkg)
