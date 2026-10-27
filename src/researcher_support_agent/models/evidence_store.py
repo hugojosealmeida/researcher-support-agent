@@ -269,7 +269,7 @@ class EvidenceRepository:
         """Retrieve a research note by paper ID."""
         row = self._conn.execute(
             """
-            SELECT rn.*, p.title as paper_title
+            SELECT rn.*, p.title as paper_title, p.year as year
             FROM research_notes rn
             LEFT JOIN papers p ON p.id = rn.paper_id
             WHERE rn.paper_id = ?
@@ -283,7 +283,7 @@ class EvidenceRepository:
         return ResearchNote(
             paper_id=d["paper_id"],
             title=title,
-            year=None,
+            year=d.get("year"),
             research_question=d.get("research_question", "Unknown"),
             motivation=d.get("motivation", "Unknown"),
             methodology=d.get("methodology", "Unknown"),
@@ -306,7 +306,7 @@ class EvidenceRepository:
         """Store an extracted claim and its supporting evidence."""
         self._conn.execute(
             """
-            INSERT INTO claims
+            INSERT OR REPLACE INTO claims
                 (id, claim_text, claim_type, paper_id, confidence, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
@@ -387,7 +387,7 @@ class EvidenceRepository:
         """Store an evidence record linking a claim to supporting papers."""
         self._conn.execute(
             """
-            INSERT INTO evidence
+            INSERT OR REPLACE INTO evidence
                 (id, claim, supporting_paper_ids, strength, confidence, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
