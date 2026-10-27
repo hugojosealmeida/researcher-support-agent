@@ -98,10 +98,43 @@ class OpenAlexAdapter(SourceAdapter):
 
         abstract_raw = record.get("abstract_inverted_index")
         abstract: str | None = None
-        if isinstance(abstract_raw, dict):
+        if isinstance(abstract_raw, dict) and abstract_raw:
             try:
-                abstract = " ".join(word for word in sorted(abstract_raw.keys()))
-            except (AttributeError, TypeError):
+                # OpenAlex stores abstracts as an inverted index mapping each
+                # word to the list of positions where it occurs. Reconstruct
+                # the original text by placing words at their positions.
+                max_pos = -1
+                for positions in abstract_raw.values():
+                    if isinstance(positions, (list, tuple)):
+                        for pos in positions:
+                            if isinstance(pos, bool):
+                                continue
+                            try:
+                                p = int(pos)
+                            except (TypeError, ValueError):
+                                continue
+                            if p > max_pos:
+                                max_pos = p
+
+                if max_pos >= 0:
+                    tokens: list[str | None] = [None] * (max_pos + 1)
+                    for word, positions in abstract_raw.items():
+                        if not isinstance(word, str):
+                            continue
+                        if not isinstance(positions, (list, tuple)):
+                            continue
+                        for pos in positions:
+                            if isinstance(pos, bool):
+                                continue
+                            try:
+                                p = int(pos)
+                            except (TypeError, ValueError):
+                                continue
+                            if 0 <= p <= max_pos:
+                                tokens[p] = word
+                    words = [w for w in tokens if w is not None]
+                    abstract = " ".join(words) if words else None
+            except (AttributeError, TypeError, ValueError, IndexError, KeyError):
                 abstract = None
 
         return Paper(

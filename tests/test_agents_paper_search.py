@@ -68,6 +68,44 @@ class TestOpenAlexAdapter:
         result = adapter.normalize({"id": "W1"})
         assert result is None
 
+    def test_abstract_reconstructed_from_inverted_index(self):
+        adapter = OpenAlexAdapter()
+        result = adapter.normalize(
+            {"title": "T", "abstract_inverted_index": {"b": [1], "a": [0]}}
+        )
+        assert result is not None
+        assert result.abstract == "a b"
+
+    def test_abstract_none_for_missing_or_empty_or_non_dict(self):
+        adapter = OpenAlexAdapter()
+        for value in (None, {}, "not a dict", 42):
+            result = adapter.normalize({"title": "T", "abstract_inverted_index": value})
+            assert result is not None
+            assert result.abstract is None
+
+    def test_abstract_handles_repeated_positions_and_words(self):
+        adapter = OpenAlexAdapter()
+        result = adapter.normalize(
+            {
+                "title": "T",
+                "abstract_inverted_index": {"the": [0, 3], "cat": [1, 1], "sat": [2]},
+            }
+        )
+        assert result is not None
+        assert result.abstract == "the cat sat the"
+
+    def test_abstract_fixture_still_deep_learning_nlp(self, openalex_fixture):
+        os.environ["OPENALEX_FIXTURE"] = str(openalex_fixture)
+        adapter = OpenAlexAdapter()
+        try:
+            q = type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})()
+            raw = adapter.search(q)
+            papers = [p for p in (adapter.normalize(r) for r in raw) if p is not None]
+            assert papers[0].abstract == "deep learning nlp"
+            assert papers[1].abstract is None
+        finally:
+            os.environ.pop("OPENALEX_FIXTURE", None)
+
 
 class TestCrossrefAdapter:
     def test_normalize_fixture(self, crossref_fixture):
