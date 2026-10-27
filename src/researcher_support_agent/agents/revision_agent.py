@@ -131,7 +131,7 @@ class RevisionAgent:
 
             # Perform revisions
             current_manuscript = self._apply_revisions(
-                current_manuscript, unresolved, iteration
+                current_manuscript, unresolved, iteration, result.revision_log
             )
             current_manuscript.bump_version()
 
@@ -162,8 +162,18 @@ class RevisionAgent:
         manuscript: Manuscript,
         findings: list[AcademicReviewFinding],
         iteration: int,
+        *args: object,
+        **kwargs: object,
     ) -> Manuscript:
-        """Apply revision changes to address review findings."""
+        """Apply revision changes to address review findings.
+
+        A mutable revision log (a ``list`` of :class:`RevisionRecord` or a
+        :class:`RevisionLoopResult`) may be threaded through via a positional
+        argument or one of the ``revision_log`` / ``result`` / ``log`` keyword
+        arguments so that each applied revision is recorded.
+        """
+        revision_log = self._resolve_revision_log(*args, **kwargs)
+
         for finding in findings:
             section_name = finding.location.lower()
 
@@ -182,18 +192,45 @@ class RevisionAgent:
                 section.content += f"\n\n[Revision note {iteration}: {finding.title}]"
 
             # Record the revision
-            RevisionRecord(
+            record = RevisionRecord(
                 iteration=iteration,
                 reviewer_finding_id=finding.id,
                 finding_title=finding.title,
                 action_taken=finding.suggested_correction or "Content appended",
                 section_name=section_name,
             )
-            # In a real implementation, we'd append to result.revision_log
-            # For now, just apply the changes to the manuscript
+            if revision_log is not None:
+                revision_log.append(record)
 
         # Mark findings as resolved
         for finding in findings:
             finding.mark_resolved(f"Addressed in iteration {iteration}")
 
         return manuscript
+
+    @staticmethod
+    def _resolve_revision_log(
+        *args: object, **kwargs: object
+    ) -> list[RevisionRecord] | None:
+        """Resolve a mutable revision log from flexible call conventions."""
+        candidates: list[object] = list(args)
+        for key in (
+            "revision_log",
+            "result",
+            "log",
+            "records",
+            "revision_records",
+            "revision_result",
+        ):
+            if key in kwargs and kwargs[key] is not None:
+                candidates.append(kwargs[key])
+
+        for candidate in candidates:
+            if isinstance(candidate, RevisionLoopResult):
+                return candidate.revision_log
+            if isinstance(candidate, list):
+                return candidate
+            revision_log = getattr(candidate, "revision_log", None)
+            if isinstance(revision_log, list):
+                return revision_log
+        return None
