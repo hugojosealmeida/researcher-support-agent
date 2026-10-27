@@ -28,4 +28,10 @@ def configure_logging(
         level=numeric_level,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         stream=sys.stdout,
+        force=True,
     )
+
+
+def setup_logging(level: str = "INFO") -> None:
+    """Backwards-compatible alias for :func:`configure_logging`."""
+    configure_logging(level=level)

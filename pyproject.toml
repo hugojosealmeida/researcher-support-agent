@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "researcher-support-agent"
 version = "0.1.0"
 description = "An intelligent research support agent that guides users through systematic literature reviews"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.0",
