@@ -56,6 +56,12 @@ class TestPDFConversion:
         output_path = os.path.join(tmp_dir, result.filename)
         assert os.path.exists(output_path)
 
+    def test_output_dir_created_if_missing(self, sample_pdf, tmp_path):
+        nonexistent_dir = tmp_path / "does" / "not" / "exist"
+        result = convert_pdf(str(sample_pdf), output_dir=str(nonexistent_dir))
+        output_path = nonexistent_dir / result.filename
+        assert output_path.exists()
+
     def test_metadata_preserved(self, sample_pdf):
         result = convert_pdf(str(sample_pdf))
         assert "original_filename" in result.metadata_preserved
