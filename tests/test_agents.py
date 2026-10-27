@@ -1,5 +1,6 @@
 """Tests for all 8 pipeline agents."""
 
+import importlib.util
 from pathlib import Path
 
 import pytest
@@ -280,3 +281,60 @@ class TestAgentsDoNotPersistState:
         agent.run(PipelineState())
 
         assert list(cwd.iterdir()) == []
+
+
+# ------------------------------------------------------------------ #
+#  agents package layout (issue #45)                                   #
+# ------------------------------------------------------------------ #
+
+
+class TestAgentsPackageLayout:
+    """``research_pipeline.agents`` must resolve to the package only.
+
+    A stale ``agents.py`` module once sat next to the package; it was
+    unreachable (packages win over modules during import) and shadowed
+    the documented ``PipelineAgent`` re-export. The package now owns
+    that public path.
+    """
+
+    def test_agents_resolves_to_a_package(self) -> None:
+        spec = importlib.util.find_spec("research_pipeline.agents")
+        assert spec is not None
+        # Packages expose submodule search locations; plain modules do not.
+        assert spec.submodule_search_locations is not None
+
+    def test_no_shadowing_agents_module_exists(self) -> None:
+        import research_pipeline
+
+        package_dir = Path(research_pipeline.__file__).resolve().parent
+        assert not (package_dir / "agents.py").exists()
+
+    def test_pipeline_agent_is_reexported_from_package(self) -> None:
+        from research_pipeline.agent_base import PipelineAgent as BaseAgent
+        from research_pipeline.agents import PipelineAgent
+
+        assert PipelineAgent is BaseAgent
+
+    def test_package_exports_all_documented_symbols(self) -> None:
+        import research_pipeline.agents as agents_pkg
+
+        assert set(agents_pkg.__all__) == {
+            "AcademicReviewerAgent",
+            "LiteratureSearchAgent",
+            "LiteratureSynthesisAgent",
+            "PaperIngestionAgent",
+            "PaperSummarizationAgent",
+            "PipelineAgent",
+            "PlanningAgent",
+            "ReviewPaperWriterAgent",
+            "RevisionReleaseAgent",
+        }
+
+    def test_readme_documents_real_file_layout(self) -> None:
+        readme = (Path(__file__).resolve().parent.parent / "README.md").read_text(
+            encoding="utf-8"
+        )
+        # The unreachable module must not be documented...
+        assert "├── agents.py" not in readme
+        # ...while the real locations must be.
+        assert "agent_base.py" in readme

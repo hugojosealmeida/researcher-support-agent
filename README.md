@@ -109,10 +109,10 @@ state = pipeline.run_full()
 research_pipeline/
 ├── __init__.py           # Public API exports
 ├── state.py              # Data models: PipelineState, SearchItem, Paper, Summary, ReviewComment
+├── agent_base.py         # Abstract PipelineAgent base class
 ├── pipeline.py           # Pipeline orchestrator
-├── agents.py             # Abstract PipelineAgent base class
-└── agents/
-    ├── __init__.py
+└── agents/               # Eight phase agent implementations
+    ├── __init__.py       # Re-exports PipelineAgent and all phase agents
     ├── planning_agent.py
     ├── literature_search_agent.py
     ├── paper_ingestion_agent.py
