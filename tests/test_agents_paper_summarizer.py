@@ -19,6 +19,28 @@ class TestSummarizePaper:
         )
         note = summarize_paper(paper)
         assert note.paper_id == "Test_Paper"
+
+    def test_stable_identifier_used_as_paper_id(self):
+        paper = Paper(
+            title="Test Paper",
+            authors=[Author(full_name="Alice")],
+            year=2023,
+            doi="10.1234/test",
+            abstract="This paper studies X.",
+        )
+        note = summarize_paper(paper)
+        assert note.paper_id == "10.1234/test"
+
+    def test_source_id_fallback_as_paper_id(self):
+        paper = Paper(
+            title="Test Paper",
+            authors=[Author(full_name="Alice")],
+            year=2023,
+            source_id="src-123",
+            abstract="This paper studies X.",
+        )
+        note = summarize_paper(paper)
+        assert note.paper_id == "src-123"
         assert note.title == "Test Paper"
         assert note.year == 2023
 

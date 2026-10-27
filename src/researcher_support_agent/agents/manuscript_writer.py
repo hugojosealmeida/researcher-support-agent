@@ -85,7 +85,7 @@ class ManuscriptWriter:
         # Build paper lookup
         paper_lookup: dict[str, Paper] = {}
         for paper in papers:
-            pid = paper.title.replace(" ", "_")
+            pid = paper.get_paper_id()
             paper_lookup[pid] = paper
             paper_id_set.add(pid)
 

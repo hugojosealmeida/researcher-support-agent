@@ -76,4 +76,14 @@ class Paper(BaseModel):
             return self.pmid
         if self.arxiv_id:
             return self.arxiv_id
+        if self.source_id:
+            return self.source_id
         return None
+
+    def get_paper_id(self) -> str:
+        """Return a stable paper identifier, falling back to a title slug."""
+        identifier = self.get_identifier()
+        if identifier:
+            return identifier
+        title = self.title
+        return title.replace(" ", "_") if title else "Unknown"
