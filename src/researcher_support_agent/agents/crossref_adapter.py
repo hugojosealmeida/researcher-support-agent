@@ -47,11 +47,19 @@ class CrossrefAdapter(SourceAdapter):
         return f"{BASE_URL}?{urlencode(params)}"
 
     def _parse_paper(self, record: dict[str, Any]) -> Paper | None:
-        title_list = record.get("title", [])
-        if not title_list:
-            return None
-        title = title_list[0]
+        from collections.abc import Sequence
 
+        title = record.get("title")
+        title_text: str | None = None
+        if isinstance(title, str):
+            title_text = title
+        elif isinstance(title, Sequence) and not isinstance(title, (bytes, bytearray)):
+            first = title[0] if title else None
+            if isinstance(first, str):
+                title_text = first
+        if not title_text:
+            return None
+        title = title_text
         authors: list[Author] = []
         for author in record.get("author", [])[:20]:
             given = author.get("given", "")

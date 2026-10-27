@@ -138,6 +138,36 @@ class TestCrossrefAdapter:
             os.environ.pop("CROSSREF_FIXTURE", None)
 
 
+class TestCrossrefTitleNormalization:
+    def test_string_and_list_titles(self):
+        adapter = CrossrefAdapter()
+        assert (
+            adapter.normalize({"title": "Full Title String"}).title
+            == "Full Title String"
+        )
+        assert (
+            adapter.normalize({"title": ["Full Title String"]}).title
+            == "Full Title String"
+        )
+        assert adapter.normalize({"title": ""}) is None
+        assert adapter.normalize({"title": []}) is None
+
+
+class TestArxivTitleNormalization:
+    def test_string_and_list_titles(self):
+        adapter = ArxivAdapter()
+        assert (
+            adapter.normalize({"title": "  Full Title String  "}).title
+            == "Full Title String"
+        )
+        assert (
+            adapter.normalize({"title": ["  Full Title String  "]}).title
+            == "Full Title String"
+        )
+        assert adapter.normalize({"title": ""}) is None
+        assert adapter.normalize({"title": []}) is None
+
+
 class TestEuropePMCAdapter:
     def test_normalize_fixture(self, europe_pmc_fixture):
         os.environ["EUROPEPMC_FIXTURE"] = str(europe_pmc_fixture)

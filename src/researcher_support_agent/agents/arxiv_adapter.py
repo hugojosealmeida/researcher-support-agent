@@ -49,10 +49,19 @@ class ArxivAdapter(SourceAdapter):
         return f"{BASE_URL}?{urlencode(params)}"
 
     def _parse_paper(self, entry: dict[str, Any]) -> Paper | None:
+        from collections.abc import Sequence
+
         title = entry.get("title", "")
-        if not title:
+        title_text: str | None = None
+        if isinstance(title, str):
+            title_text = title
+        elif isinstance(title, Sequence) and not isinstance(title, (bytes, bytearray)):
+            first = title[0] if title else None
+            if isinstance(first, str):
+                title_text = first
+        if not title_text:
             return None
-        title = title.strip()
+        title = title_text.strip()
 
         authors: list[Author] = []
         for name in entry.get("authors", []):
