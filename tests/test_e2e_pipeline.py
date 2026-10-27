@@ -679,3 +679,34 @@ class TestEvidenceStore:
         assert md_path.exists()
         assert "Markdown Note" in md_path.read_text()
         store.close()
+
+    def test_summarizer_pointers_round_trip_through_store(self, tmp_dir):
+        """Pointers produced by summarize_paper survive store/load (#42)."""
+        raw_text = (
+            "# Methods\n"
+            "Survey with 100 participants.\n"
+            "\n"
+            "# Results\n"
+            "We observed a 20% improvement.\n"
+            "\n"
+            "# Limitations\n"
+            "The sample was self-selected.\n"
+        )
+        note = summarize_paper(PAPER_A, raw_text=raw_text)
+        assert note.evidence_pointers, "producer should emit section anchors"
+
+        store = EvidenceRepository(db_path=os.path.join(tmp_dir, "pointers.db"))
+        store.store_paper(
+            {"id": note.paper_id, "title": PAPER_A.title, "year": PAPER_A.year}
+        )
+        store.store_research_note(note)
+        retrieved = store.get_research_note(note.paper_id)
+        assert retrieved is not None
+        assert len(retrieved.evidence_pointers) == len(note.evidence_pointers)
+        assert retrieved.evidence_pointers == note.evidence_pointers
+
+        # Re-storing must not duplicate the pointers.
+        store.store_research_note(note)
+        rows = store._conn.execute("SELECT COUNT(*) FROM evidence_pointers").fetchone()
+        assert rows[0] == len(note.evidence_pointers)
+        store.close()
