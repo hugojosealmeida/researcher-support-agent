@@ -56,7 +56,7 @@ class EuropePMCAdapter(SourceAdapter):
         if isinstance(title, str):
             title_text = title
         elif isinstance(title, Sequence) and not isinstance(title, (bytes, bytearray)):
-            first = title[0]
+            first = title[0] if title else None
             if isinstance(first, str):
                 title_text = first
         if not title_text:
