@@ -1,0 +1,108 @@
+<<<<<<< HEAD
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+<<<<<<< HEAD
+.eggs/
+*.egg
+=======
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+>>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
+
+# Virtual environment
+.venv/
+venv/
+<<<<<<< HEAD
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# State files (runtime)
+pipeline_state.json
+
+# Test artifacts
+.pytest_cache/
+=======
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+=======
+env/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+>>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+<<<<<<< HEAD
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+=======
+>>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
+# OS
+.DS_Store
+Thumbs.db
+
+<<<<<<< HEAD
+# Research agent
+.research-agent/
+state.json
+>>>>>>> 2ff0702 (fix: Phase A — Foundation and architecture (#2))
+=======
+# Generated artifacts
+*.pdf
+*.md  # Only in output directories, not in src/tests
+evidence/
+outputs/
+artifacts/
+manuscript_drafts/
+release/
+
+# State and checkpoint files
+state.json
+checkpoint.json
+
+# Logs
+*.log
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# Pytest cache
+.pytest_cache/
+
+# Ruff cache
+.ruff_cache/
+
+# Environment variables
+.env
+
+# Token tracker state
+token_usage.json
+>>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))

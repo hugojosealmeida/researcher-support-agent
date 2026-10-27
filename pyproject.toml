@@ -1,0 +1,151 @@
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+[project]
+<<<<<<< HEAD
+name = "research-pipeline"
+version = "0.1.0"
+description = "An 8-phase academic research pipeline with independently runnable agents"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+=======
+name = "researcher-support-agent"
+version = "0.1.0"
+description = "An intelligent research support agent that guides users through systematic literature reviews"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.12",
+    "pydantic>=2.0",
+    "structlog>=24.0",
+    "python-slugify>=8.0",
+=======
+=======
+>>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
+=======
+>>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
+=======
+>>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "researcher-support-agent"
+version = "0.1.0"
+description = "An intelligent research support agent that guides users through systematic literature reviews"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.0",
+    "python-slugify>=8.0",
+    "structlog>=24.0",
+    "typer[all]>=0.12",
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> e45cda7 (fix: Phase B — Literature discovery and ingestion (#3))
+=======
+>>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
+=======
+>>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
+=======
+>>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+]
+
+[project.scripts]
+research = "researcher_support_agent.main:app"
+
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/researcher_support_agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+=======
+[tool.setuptools.packages.find]
+where = ["src"]
+>>>>>>> e45cda7 (fix: Phase B — Literature discovery and ingestion (#3))
+=======
+[tool.setuptools.packages.find]
+where = ["src"]
+>>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
+=======
+[tool.setuptools.packages.find]
+where = ["src"]
+>>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
+=======
+[tool.setuptools.packages.find]
+where = ["src"]
+>>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+    "I",     # isort
+    "N",     # pep8-naming
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "TCH",   # flake8-type-checking
+    "RUF",   # ruff-specific
+]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["researcher_support_agent"]
+>>>>>>> 2ff0702 (fix: Phase A — Foundation and architecture (#2))
+=======
+=======
+>>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
+=======
+>>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
+=======
+>>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> e45cda7 (fix: Phase B — Literature discovery and ingestion (#3))
+=======
+>>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
+=======
+>>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
+=======
+>>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
