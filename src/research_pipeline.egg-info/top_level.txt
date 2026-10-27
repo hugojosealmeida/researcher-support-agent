@@ -1,2 +1,0 @@
-research_pipeline
-researcher_support_agent
