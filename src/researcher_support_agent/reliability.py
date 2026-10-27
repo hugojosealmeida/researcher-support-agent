@@ -32,9 +32,18 @@ T = TypeVar("T")
 
 
 class RetryableError(Exception):
-    """Error that should be retried (transient)."""
+    """Error that should be retried (transient).
 
-    pass
+    Args:
+        retry_after: Optional server-suggested wait (seconds), e.g. parsed
+            from an HTTP ``Retry-After`` header.  When present,
+            :class:`RetryPolicy` uses it as a lower bound for the backoff
+            delay (still capped by ``max_delay``).
+    """
+
+    def __init__(self, *args: object, retry_after: float | None = None) -> None:
+        super().__init__(*args)
+        self.retry_after = retry_after
 
 
 class NonRetryableError(Exception):
@@ -79,6 +88,10 @@ class RetryPolicy:
                         self.base_delay * (self.multiplier ** (attempt - 1)),
                         self.max_delay,
                     )
+                    # Honor a server-suggested Retry-After as a lower bound.
+                    retry_after = getattr(exc, "retry_after", None)
+                    if isinstance(retry_after, (int, float)) and retry_after > 0:
+                        delay = min(max(delay, float(retry_after)), self.max_delay)
                     logger.warning(
                         "retry_attempt attempt=%d/%d error=%s delay=%.2fs",
                         attempt,

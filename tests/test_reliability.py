@@ -100,6 +100,40 @@ class TestRetryPolicy:
         with pytest.raises(NonRetryableError):
             policy.execute(boom)
 
+    def test_retry_after_hint_raises_backoff_floor(self, monkeypatch):
+        delays: list[float] = []
+        monkeypatch.setattr("time.sleep", delays.append)
+        policy = RetryPolicy(max_retries=2, base_delay=1.0)
+        calls = []
+
+        def limited():
+            calls.append(1)
+            if len(calls) < 2:
+                raise RetryableError("rate limited", retry_after=7.0)
+            return "ok"
+
+        assert policy.execute(limited) == "ok"
+        # Server-suggested 7s beats the computed 1s backoff.
+        assert delays == [7.0]
+
+    def test_retry_after_hint_is_capped_by_max_delay(self, monkeypatch):
+        delays: list[float] = []
+        monkeypatch.setattr("time.sleep", delays.append)
+        policy = RetryPolicy(max_retries=2, base_delay=1.0, max_delay=3.0)
+        calls = []
+
+        def limited():
+            calls.append(1)
+            if len(calls) < 2:
+                raise RetryableError("long wait", retry_after=120.0)
+            return "ok"
+
+        assert policy.execute(limited) == "ok"
+        assert delays == [3.0]
+
+    def test_plain_retryable_error_has_no_retry_after(self):
+        assert RetryableError("classic").retry_after is None
+
 
 # ---------------------------------------------------------------------------
 # Rate limiter tests
