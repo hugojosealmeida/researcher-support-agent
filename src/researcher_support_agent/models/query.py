@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -13,3 +15,10 @@ class SearchQuery(BaseModel):
     date_from: str | None = Field(default=None)
     date_to: str | None = Field(default=None)
     limit: int | None = Field(default=None)
+    # Adapter-oriented fields (used by source adapters)
+    query: str = Field(default="")
+    database: str = Field(default="")
+    page: int = Field(default=1)
+    page_size: int = Field(default=25)
+    filters: dict[str, Any] = Field(default_factory=dict)
+    results_count: int = Field(default=0)

@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import ClassVar
 
 from research_pipeline.agent_base import PipelineAgent
 from research_pipeline.state import PipelineState
-
-if TYPE_CHECKING:
-    pass  # no extra imports needed
 
 
 class Pipeline:
@@ -22,7 +19,7 @@ class Pipeline:
         Path to the JSON state file.  If ``None`` state is ephemeral.
     """
 
-    VALID_PHASES: list[str] = [
+    VALID_PHASES: ClassVar[list[str]] = [
         "planning",
         "literature_search",
         "paper_ingestion",

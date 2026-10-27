@@ -83,7 +83,7 @@ def _extract_text_simple(pdf_path: str) -> str:
 
     # Try pdftotext via subprocess
     try:
-        import subprocess  # noqa: F401
+        import subprocess
 
         result = subprocess.run(
             ["pdftotext", pdf_path, "-"],

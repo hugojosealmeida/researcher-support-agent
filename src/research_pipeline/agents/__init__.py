@@ -10,12 +10,12 @@ from research_pipeline.agents.review_paper_writer_agent import ReviewPaperWriter
 from research_pipeline.agents.revision_release_agent import RevisionReleaseAgent
 
 __all__ = [
-    "PlanningAgent",
+    "AcademicReviewerAgent",
     "LiteratureSearchAgent",
+    "LiteratureSynthesisAgent",
     "PaperIngestionAgent",
     "PaperSummarizationAgent",
-    "LiteratureSynthesisAgent",
+    "PlanningAgent",
     "ReviewPaperWriterAgent",
-    "AcademicReviewerAgent",
     "RevisionReleaseAgent",
 ]

@@ -34,8 +34,12 @@ manuscript_drafts/
 release/
 
 # State and checkpoint files
+pipeline_state.json
 state.json
 checkpoint.json
+
+# Research agent
+.research-agent/
 
 # Logs
 *.log

@@ -79,13 +79,13 @@ class TestPipelineFullWorkflow:
         return p, tmp_path
 
     def test_run_full_executes_all_phases(self) -> None:
-        p, tmp_path = self._build_pipeline()
+        p, _tmp_path = self._build_pipeline()
         result = p.run_full()
         assert result.topic == "Gene Therapy"
         assert result.completed_phases == Pipeline.VALID_PHASES
 
     def test_run_from_executes_subset(self) -> None:
-        p, tmp_path = self._build_pipeline()
+        p, _tmp_path = self._build_pipeline()
 
         # First run planning only
         p.run_phase("planning")
@@ -100,10 +100,10 @@ class TestPipelineFullWorkflow:
             "academic_review",
             "revision_release",
         ]
-        assert result.completed_phases == ["planning"] + remaining
+        assert result.completed_phases == ["planning", *remaining]
 
     def test_run_full_overrides_external_state(self) -> None:
-        p, tmp_path = self._build_pipeline()
+        p, _tmp_path = self._build_pipeline()
         ext = PipelineState()
         ext.topic = "External"
         ext.completed_phases = ["planning"]
