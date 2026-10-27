@@ -151,6 +151,23 @@ class TestEvidenceRepository:
         pointers = repo.get_evidence_pointers("paper-1")
         assert len(pointers) == 1
 
+    def test_store_evidence_pointer_idempotent(self, repo):
+        ptr = EvidencePointer(
+            paper_id="paper-1",
+            section="Results",
+            page=5,
+            table="Table 1",
+            description="Table 1 shows the main results.",
+        )
+        repo.store_evidence_pointer(ptr)
+        repo.store_evidence_pointer(ptr)
+        rows = repo._conn.execute(
+            "SELECT COUNT(*) FROM evidence_pointers"
+        ).fetchone()[0]
+        assert rows == 1
+        pointers = repo.get_evidence_pointers("paper-1")
+        assert len(pointers) == 1
+
     def test_store_and_get_citations(self, repo):
         repo.store_paper({"id": "p1", "title": "Paper 1"})
         repo.store_paper({"id": "p2", "title": "Paper 2"})
