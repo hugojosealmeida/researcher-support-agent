@@ -65,7 +65,9 @@ class CrossrefAdapter(SourceAdapter):
             )
 
         doi = record.get("DOI")
-        published_print = record.get("published-print", {}) or record.get("published", {})
+        published_print = record.get("published-print", {}) or record.get(
+            "published", {}
+        )
         year: int | None = None
         if published_print:
             date_parts = published_print.get("date-parts", [[]])[0]

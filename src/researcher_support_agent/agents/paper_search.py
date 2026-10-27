@@ -59,7 +59,9 @@ class PaperSearchResult(BaseModel):
 
     query: SearchQuery = Field(..., description="The search query that was executed")
     papers: list[Paper] = Field(default_factory=list, description="Matching papers")
-    total_results: int = Field(default=0, description="Total number of results available")
+    total_results: int = Field(
+        default=0, description="Total number of results available"
+    )
     source: str = Field(default="", description="Which database was searched")
     search_time_ms: int | None = Field(default=None)
 
@@ -96,7 +98,9 @@ class PaperSearchAgent:
                 query=query,
                 papers=[],
                 total_results=0,
-                source=query.databases[0] if getattr(query, "databases", None) else "multiple",
+                source=query.databases[0]
+                if getattr(query, "databases", None)
+                else "multiple",
             )
 
         query_string = str(query)
@@ -137,13 +141,16 @@ class PaperSearchAgent:
                 if paper is not None:
                     break
             if paper is not None:
-                paper.metadata.setdefault("query_provenance", {
-                    "query": query_string,
-                    "date_from": date_from,
-                    "date_to": date_to,
-                    "searched_at": datetime.now(UTC).isoformat(),
-                    "sources": [a.source_name for a in used_adapters],
-                })
+                paper.metadata.setdefault(
+                    "query_provenance",
+                    {
+                        "query": query_string,
+                        "date_from": date_from,
+                        "date_to": date_to,
+                        "searched_at": datetime.now(UTC).isoformat(),
+                        "sources": [a.source_name for a in used_adapters],
+                    },
+                )
                 papers.append(paper)
 
         return deduplicate_papers(papers)

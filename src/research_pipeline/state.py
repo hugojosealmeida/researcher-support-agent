@@ -124,7 +124,10 @@ class PipelineState:
             val = getattr(self, key)
             # Serialize domain objects as dicts
             if isinstance(val, (list, tuple)):
-                data[key] = [_serialize(item) if not isinstance(item, dict) else item for item in val]
+                data[key] = [
+                    _serialize(item) if not isinstance(item, dict) else item
+                    for item in val
+                ]
             elif isinstance(val, dict):
                 data[key] = val
             elif not isinstance(val, (str, int, float, bool)) and val is not None:
@@ -168,7 +171,11 @@ class PipelineState:
     def phase_has_data(self, phase_name: str) -> bool:
         """Return ``True`` if the state already has results for *phase_name*."""
         attrs = self._PHASE_ATTRIBUTES.get(phase_name, [])
-        return any(getattr(self, attr) for attr in attrs if isinstance(getattr(self, attr), (list, dict, str)))
+        return any(
+            getattr(self, attr)
+            for attr in attrs
+            if isinstance(getattr(self, attr), (list, dict, str))
+        )
 
     def get_phase_order(self) -> list[str]:
         return list(self._phase_order)

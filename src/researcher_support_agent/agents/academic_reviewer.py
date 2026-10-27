@@ -69,7 +69,9 @@ class AcademicReviewer:
         passes_performed.append(ReviewPass.EVIDENCE)
 
         # Pass 4: Bibliography review
-        bib_findings = self._review_bibliography(manuscript, bibliography, known_paper_ids)
+        bib_findings = self._review_bibliography(
+            manuscript, bibliography, known_paper_ids
+        )
         for f in bib_findings:
             report.add_finding(f)
         passes_performed.append(ReviewPass.BIBLIOGRAPHY)
@@ -81,7 +83,9 @@ class AcademicReviewer:
         passes_performed.append(ReviewPass.ACADEMIC_QUALITY)
 
         # Pass 6: Research integrity review
-        integrity_findings = self._review_research_integrity(manuscript, known_paper_ids)
+        integrity_findings = self._review_research_integrity(
+            manuscript, known_paper_ids
+        )
         for f in integrity_findings:
             report.add_finding(f)
         passes_performed.append(ReviewPass.RESEARCH_INTEGRITY)
@@ -196,7 +200,11 @@ class AcademicReviewer:
         # Check for empty sections with content requirement
         for name in section_names:
             section = manuscript.sections[name]
-            if name in required_sections and not section.content.strip() and name != "abstract":
+            if (
+                name in required_sections
+                and not section.content.strip()
+                and name != "abstract"
+            ):
                 findings.append(
                     AcademicReviewFinding(
                         pass_name=ReviewPass.STRUCTURE,
@@ -227,7 +235,9 @@ class AcademicReviewer:
 
         return findings
 
-    def _review_evidence(self, manuscript: Manuscript, known_paper_ids: set[str]) -> list[AcademicReviewFinding]:
+    def _review_evidence(
+        self, manuscript: Manuscript, known_paper_ids: set[str]
+    ) -> list[AcademicReviewFinding]:
         """Review evidence: unsupported claims, overgeneralization, contradictions, missing citations."""
         findings: list[AcademicReviewFinding] = []
 
@@ -347,7 +357,9 @@ class AcademicReviewer:
 
         return findings
 
-    def _review_academic_quality(self, manuscript: Manuscript) -> list[AcademicReviewFinding]:
+    def _review_academic_quality(
+        self, manuscript: Manuscript
+    ) -> list[AcademicReviewFinding]:
         """Review academic quality: clarity, terminology, critical depth, limitations, contribution."""
         findings: list[AcademicReviewFinding] = []
 
@@ -370,7 +382,11 @@ class AcademicReviewer:
         # Check for contribution statement
         if discussion and discussion.content:
             lower = discussion.content.lower()
-            if "contribution" not in lower and "implication" not in lower and "conclude" not in lower:
+            if (
+                "contribution" not in lower
+                and "implication" not in lower
+                and "conclude" not in lower
+            ):
                 findings.append(
                     AcademicReviewFinding(
                         pass_name=ReviewPass.ACADEMIC_QUALITY,

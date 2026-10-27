@@ -67,13 +67,17 @@ def _execute_run(
 
             plan = ResearchPlanner().plan(topic, [ResearchQuestion(question=topic)])
             typer.echo(f"Research plan built with {len(plan.questions)} questions")
-            typer.echo(f"  Topic: {plan.topic if hasattr(plan, 'topic') else plan.title}")
+            typer.echo(
+                f"  Topic: {plan.topic if hasattr(plan, 'topic') else plan.title}"
+            )
             for i, question in enumerate(plan.questions, 1):
                 typer.echo(f"  Q{i}: {question.question}")
         handler = getattr(orchestrator, f"_handle_{target.value}", None)
         if handler is None:
+
             def handler(_phase: Phase, _state: object) -> None:
                 return None
+
         orchestrator.run_phase(target, handler)
         typer.echo("Pipeline complete.")
         return
@@ -89,8 +93,10 @@ def _execute_run(
         for current in PHASE_ORDER[start_index:]:
             handler = getattr(orchestrator, f"_handle_{current.value}", None)
             if handler is None:
+
                 def handler(_phase: Phase, _state: object) -> None:
                     return None
+
             orchestrator.run_phase(current, handler)
         typer.echo("Pipeline complete.")
         return
@@ -105,10 +111,18 @@ def _execute_run(
 def _callback(
     ctx: typer.Context,
     topic: str | None = typer.Option(None, "--topic", "-t", help="Research topic."),
-    phase: str | None = typer.Option(None, "--phase", "-p", help="Run a single phase by name."),
-    from_phase: str | None = typer.Option(None, "--from", "-f", help="Resume from this phase onward."),
-    state: str = typer.Option("state.json", "--state", "-s", help="Path to state file."),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Validate phases without executing."),
+    phase: str | None = typer.Option(
+        None, "--phase", "-p", help="Run a single phase by name."
+    ),
+    from_phase: str | None = typer.Option(
+        None, "--from", "-f", help="Resume from this phase onward."
+    ),
+    state: str = typer.Option(
+        "state.json", "--state", "-s", help="Path to state file."
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Validate phases without executing."
+    ),
     retries: int = typer.Option(3, "--retries", "-r", help="Max retries per phase."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose logging."),
 ) -> None:
@@ -128,10 +142,18 @@ def _callback(
 @app.command(name="run")
 def run_command(
     topic: str | None = typer.Option(None, "--topic", "-t", help="Research topic."),
-    phase: str | None = typer.Option(None, "--phase", "-p", help="Run a single phase by name."),
-    from_phase: str | None = typer.Option(None, "--from", "-f", help="Resume from this phase onward."),
-    state: str = typer.Option("state.json", "--state", "-s", help="Path to state file."),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Validate phases without executing."),
+    phase: str | None = typer.Option(
+        None, "--phase", "-p", help="Run a single phase by name."
+    ),
+    from_phase: str | None = typer.Option(
+        None, "--from", "-f", help="Resume from this phase onward."
+    ),
+    state: str = typer.Option(
+        "state.json", "--state", "-s", help="Path to state file."
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Validate phases without executing."
+    ),
     retries: int = typer.Option(3, "--retries", "-r", help="Max retries per phase."),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose logging."),
 ) -> None:

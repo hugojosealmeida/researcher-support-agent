@@ -31,7 +31,9 @@ from researcher_support_agent.orchestrator import Orchestrator, Phase
 
 PAPER_A = Paper(
     title="Deep Learning for Natural Language Processing",
-    authors=[Author(full_name="Alice Smith", orcid="https://orcid.org/0000-0001-2345-6789")],
+    authors=[
+        Author(full_name="Alice Smith", orcid="https://orcid.org/0000-0001-2345-6789")
+    ],
     year=2023,
     doi="10.1234/example-dl-nlp",
     abstract="This paper presents a deep learning approach to NLP tasks.",
@@ -47,7 +49,9 @@ PAPER_B = Paper(
 
 PAPER_C = Paper(
     title="Bayesian Methods in Clinical Trials",
-    authors=[Author(full_name="David Brown", orcid="https://orcid.org/0000-0002-3456-7890")],
+    authors=[
+        Author(full_name="David Brown", orcid="https://orcid.org/0000-0002-3456-7890")
+    ],
     year=2022,
     doi="10.9999/clinical-bayesian",
     abstract="A review of Bayesian approaches in clinical trial design.",
@@ -132,7 +136,9 @@ class TestEndToEndPipeline:
         )
 
         known_ids = {"paper-1", "paper-2"}
-        ms = Manuscript.from_template("Test Manuscript", ManuscriptTemplate.NARRATIVE_REVIEW)
+        ms = Manuscript.from_template(
+            "Test Manuscript", ManuscriptTemplate.NARRATIVE_REVIEW
+        )
         ms.sections["results"].content = "Some content."
         ms.sections["results"].citations_used = [
             "paper-1",

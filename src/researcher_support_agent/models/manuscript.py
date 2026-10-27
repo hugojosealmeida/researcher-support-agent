@@ -146,8 +146,12 @@ class ManuscriptTemplate(StrEnum):
 class SectionTemplate(BaseModel):
     """A template defining the purpose of a manuscript section."""
 
-    name: str = Field(..., min_length=1, description="Section name (e.g., 'introduction')")
-    purpose: str = Field(..., min_length=1, description="Why this section exists in the manuscript")
+    name: str = Field(
+        ..., min_length=1, description="Section name (e.g., 'introduction')"
+    )
+    purpose: str = Field(
+        ..., min_length=1, description="Why this section exists in the manuscript"
+    )
 
 
 class ManuscriptSection(BaseModel):
@@ -155,7 +159,9 @@ class ManuscriptSection(BaseModel):
 
     name: str = Field(..., min_length=1, description="Section name")
     purpose: str = Field(..., min_length=1, description="Purpose of this section")
-    content: str = Field(default="", min_length=0, description="Section markdown content")
+    content: str = Field(
+        default="", min_length=0, description="Section markdown content"
+    )
     citations_used: list[str] = Field(
         default_factory=list,
         description="Paper IDs referenced in this section",
@@ -186,7 +192,9 @@ class Manuscript(BaseModel):
         default=ManuscriptTemplate.NARRATIVE_REVIEW,
         description="Section template to use",
     )
-    sections: dict[str, ManuscriptSection] = Field(default_factory=dict, description="Section name -> section data")
+    sections: dict[str, ManuscriptSection] = Field(
+        default_factory=dict, description="Section name -> section data"
+    )
     version: int = Field(default=1, ge=1)
     reference_ids: list[str] = Field(
         default_factory=list,
@@ -227,13 +235,17 @@ class Manuscript(BaseModel):
             )
         return cls(title=title, template=template, sections=sections)
 
-    def add_section(self, name: str, purpose: str, content: str = "") -> ManuscriptSection:
+    def add_section(
+        self, name: str, purpose: str, content: str = ""
+    ) -> ManuscriptSection:
         """Add a custom section to the manuscript."""
         section = ManuscriptSection(name=name, purpose=purpose, content=content)
         self.sections[name] = section
         return section
 
-    def set_section_content(self, name: str, content: str, citations: list[str] | None = None) -> None:
+    def set_section_content(
+        self, name: str, content: str, citations: list[str] | None = None
+    ) -> None:
         """Set the content of a named section and record its citations."""
         if name not in self.sections:
             raise KeyError(f"Section '{name}' does not exist in this manuscript")

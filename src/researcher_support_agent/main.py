@@ -22,7 +22,9 @@ app.add_typer(run_app, name="run")
 
 @app.command("doctor")
 def _doctor(
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed output."),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Show detailed output."
+    ),
 ) -> None:
     """Run a health check on the research environment."""
     doctor(verbose=verbose)
@@ -34,8 +36,12 @@ app.command("list-phases")(_list_phases)
 @app.callback()
 def _main_callback(
     ctx: typer.Context,
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose logging."),
-    version: bool = typer.Option(False, "--version", is_eager=True, help="Show version and exit."),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose logging."
+    ),
+    version: bool = typer.Option(
+        False, "--version", is_eager=True, help="Show version and exit."
+    ),
 ) -> None:
     configure_logging(level="DEBUG" if verbose else "INFO")
     if version:

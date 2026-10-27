@@ -123,7 +123,9 @@ class TestManuscript:
 
     def test_validate_citations(self):
         m = Manuscript.from_template("Test", ManuscriptTemplate.NARRATIVE_REVIEW)
-        m.set_section_content("abstract", "Content.", citations=["known-1", "unknown-1"])
+        m.set_section_content(
+            "abstract", "Content.", citations=["known-1", "unknown-1"]
+        )
         m.add_reference("known-2")
         m.add_reference("unknown-2")
 

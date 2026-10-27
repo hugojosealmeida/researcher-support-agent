@@ -145,7 +145,9 @@ class TestProcessPapersIsolated:
                 raise NonRetryableError("fail on 2")
             return {"id": p["id"]}
 
-        results = process_papers_isolated(papers, selective_fail, lambda p: str(p["id"]))
+        results = process_papers_isolated(
+            papers, selective_fail, lambda p: str(p["id"])
+        )
         assert len(results) == 3
         assert results[0].success is True
         assert results[1].success is False
@@ -157,7 +159,9 @@ class TestProcessPapersIsolated:
         def always_fail(p):
             raise NonRetryableError("always")
 
-        results = process_papers_isolated(papers, always_fail, lambda p: str(p["id"]), max_failures=2)
+        results = process_papers_isolated(
+            papers, always_fail, lambda p: str(p["id"]), max_failures=2
+        )
         assert len(results) == 5  # All papers represented
         assert results[0].success is False
         assert results[1].success is False

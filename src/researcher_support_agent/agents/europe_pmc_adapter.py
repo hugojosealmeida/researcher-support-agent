@@ -51,12 +51,13 @@ class EuropePMCAdapter(SourceAdapter):
         from collections.abc import Sequence
 
         title = record.get("title")
+        title_text: str | None = None
         if isinstance(title, str):
             title_text = title
         elif isinstance(title, Sequence) and not isinstance(title, (bytes, bytearray)):
-            title_text = title[0] if len(title) else None
-        else:
-            title_text = None
+            first = title[0]
+            if isinstance(first, str):
+                title_text = first
         if not title_text:
             return None
 
@@ -76,6 +77,9 @@ class EuropePMCAdapter(SourceAdapter):
                 year = int(pub_date[:4])
 
         journal_title = record.get("journalTitle")
+        venue: str | None = None
+        if isinstance(journal_title, str):
+            venue = journal_title
         abstract = record.get("abstractText")
         if abstract == "":
             abstract = None
@@ -84,12 +88,14 @@ class EuropePMCAdapter(SourceAdapter):
             title=title_text,
             authors=authors,
             year=year,
-            venue=journal_title,
+            venue=venue,
             doi=doi,
             pmid=pmid,
             source_id=pmcid or pmid,
             abstract=abstract,
-            url=f"https://www.ebi.ac.uk/europepmc/abstract/MED/{pmid}" if pmid else None,
+            url=f"https://www.ebi.ac.uk/europepmc/abstract/MED/{pmid}"
+            if pmid
+            else None,
             retrieval_status="retrieved",
             processing_status="pending",
             metadata={"europe_pmc_id": pmcid or pmid},
@@ -124,7 +130,9 @@ class EuropePMCAdapter(SourceAdapter):
                 resp.raise_for_status()
                 data = resp.json()
                 query.results_count = int(data.get("resultCount", 0))
-                return cast(list[dict[str, Any]], data.get("resultList", {}).get("result", []))
+                return cast(
+                    list[dict[str, Any]], data.get("resultList", {}).get("result", [])
+                )
             except ImportError:
                 return []
 

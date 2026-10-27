@@ -17,7 +17,9 @@ class TestAcademicReviewer:
 
     @pytest.fixture()
     def sample_manuscript(self):
-        return Manuscript.from_template("Test Review", ManuscriptTemplate.NARRATIVE_REVIEW)
+        return Manuscript.from_template(
+            "Test Review", ManuscriptTemplate.NARRATIVE_REVIEW
+        )
 
     @pytest.fixture()
     def good_manuscript(self):
@@ -84,7 +86,9 @@ class TestAcademicReviewer:
         abstract_findings = report.get_findings_by_pass(ReviewPass.ABSTRACT)
         # Should flag missing purpose/methods/results
         titles = [f.title for f in abstract_findings]
-        assert any("purpose" in t.lower() for t in titles) or any("methods" in t.lower() for t in titles)
+        assert any("purpose" in t.lower() for t in titles) or any(
+            "methods" in t.lower() for t in titles
+        )
 
     def test_review_structure_empty_sections(self, reviewer, sample_manuscript):
         known_ids = {"paper-1"}
@@ -104,7 +108,10 @@ class TestAcademicReviewer:
         known_ids = {"known-paper"}  # unknown-paper is not known
         report = reviewer.review(m, known_ids)
         evidence_findings = report.get_findings_by_pass(ReviewPass.EVIDENCE)
-        assert any("Unresolved" in f.title or "unresolved" in f.title for f in evidence_findings)
+        assert any(
+            "Unresolved" in f.title or "unresolved" in f.title
+            for f in evidence_findings
+        )
 
     def test_review_bibliography_uncited(self, reviewer):
         m = Manuscript.from_template("Test", ManuscriptTemplate.NARRATIVE_REVIEW)
@@ -118,7 +125,9 @@ class TestAcademicReviewer:
         known_ids = {"paper-1", "paper-2"}
         report = reviewer.review(m, known_ids)
         bib_findings = report.get_findings_by_pass(ReviewPass.BIBLIOGRAPHY)
-        assert any("not cited" in f.title.lower() or "Uncited" in f.title for f in bib_findings)
+        assert any(
+            "not cited" in f.title.lower() or "Uncited" in f.title for f in bib_findings
+        )
 
     def test_review_academic_quality_limitations(self, reviewer):
         m = Manuscript.from_template("Test", ManuscriptTemplate.NARRATIVE_REVIEW)

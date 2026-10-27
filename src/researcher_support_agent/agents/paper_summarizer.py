@@ -26,9 +26,15 @@ from ..reliability import sanitize_pdf_text
 class PaperSummaryConfig(BaseModel):
     """Configuration for paper summarization."""
 
-    include_quantitative_findings: bool = Field(default=True, description="Attempt to extract quantitative findings")
-    include_evidence_pointers: bool = Field(default=True, description="Generate evidence pointers to sections")
-    include_agent_interpretation: bool = Field(default=True, description="Include agent's interpretation section")
+    include_quantitative_findings: bool = Field(
+        default=True, description="Attempt to extract quantitative findings"
+    )
+    include_evidence_pointers: bool = Field(
+        default=True, description="Generate evidence pointers to sections"
+    )
+    include_agent_interpretation: bool = Field(
+        default=True, description="Include agent's interpretation section"
+    )
 
 
 def summarize_paper(
@@ -101,23 +107,31 @@ def summarize_paper(
 
     # Try to extract from raw text, fall back to abstract, then Unknown
     methodology = sections.get("Methodology", sections.get("Methods", "Unknown"))
-    data_sample = sections.get("Data", sections.get("Sample", "Information not available in abstract"))
+    data_sample = sections.get(
+        "Data", sections.get("Sample", "Information not available in abstract")
+    )
     main_results = sections.get("Results", sections.get("Findings", "Unknown"))
     quantitative = sections.get("Results", "")
     if config.include_quantitative_findings and quantitative:
         # Try to find numerical results
         import re
 
-        numbers = re.findall(r"\d+\.?\d*\s*(?:%|p\s*<|t\s*=|F\s*=|df\s*=|\(r\s*=\s*\d)", quantitative)
+        numbers = re.findall(
+            r"\d+\.?\d*\s*(?:%|p\s*<|t\s*=|F\s*=|df\s*=|\(r\s*=\s*\d)", quantitative
+        )
         if numbers:
             quantitative = "Numerical results: " + ", ".join(numbers)
         else:
             quantitative = "Numerical results mentioned but not extracted"
     limitations = sections.get("Limitations", sections.get("Limitation", "Unknown"))
-    contributions = sections.get("Contributions", sections.get("Contribution", "Unknown"))
+    contributions = sections.get(
+        "Contributions", sections.get("Contribution", "Unknown")
+    )
 
     # Build agent interpretation
-    agent_interpretation = f"This paper by {', '.join(a.full_name for a in paper.authors[:3])}"
+    agent_interpretation = (
+        f"This paper by {', '.join(a.full_name for a in paper.authors[:3])}"
+    )
     if paper.year:
         agent_interpretation += f" ({paper.year})"
     agent_interpretation += " addresses a research topic related to the review scope."
@@ -129,10 +143,14 @@ def summarize_paper(
         methodology=methodology,
         data_and_sample=data_sample,
         main_results=main_results,
-        quantitative_findings=quantitative if config.include_quantitative_findings else "Unknown",
+        quantitative_findings=quantitative
+        if config.include_quantitative_findings
+        else "Unknown",
         limitations=limitations,
         contributions=contributions,
-        agent_interpretation=agent_interpretation if config.include_agent_interpretation else "Unknown",
+        agent_interpretation=agent_interpretation
+        if config.include_agent_interpretation
+        else "Unknown",
         evidence_pointers=evidence_pointers,
     )
 
@@ -145,4 +163,7 @@ def summarize_papers(
     """Summarize multiple papers."""
     raw_texts = raw_texts or {}
     config = config or PaperSummaryConfig()
-    return [summarize_paper(p, raw_texts.get(p.title.replace(" ", "_")), config) for p in papers]
+    return [
+        summarize_paper(p, raw_texts.get(p.title.replace(" ", "_")), config)
+        for p in papers
+    ]

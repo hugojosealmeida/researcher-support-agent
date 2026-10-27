@@ -32,7 +32,9 @@ class RevisionRecord(BaseModel):
     """A record of one revision action."""
 
     iteration: int = Field(..., description="Revision iteration number")
-    reviewer_finding_id: str = Field(..., description="Which review finding prompted this revision")
+    reviewer_finding_id: str = Field(
+        ..., description="Which review finding prompted this revision"
+    )
     finding_title: str = Field(..., description="Title of the finding being addressed")
     action_taken: str = Field(..., description="What the revision agent changed")
     section_name: str = Field(..., description="Which section was modified")
@@ -43,7 +45,9 @@ class ManuscriptVersion(BaseModel):
     """A snapshot of the manuscript at a point in time."""
 
     version: int = Field(..., description="Manuscript version number")
-    content_summary: str = Field(..., description="Brief summary of changes from previous version")
+    content_summary: str = Field(
+        ..., description="Brief summary of changes from previous version"
+    )
     timestamp: datetime = Field(default_factory=now_utc)
     passed_review: bool = Field(default=False)
 
@@ -51,11 +55,21 @@ class ManuscriptVersion(BaseModel):
 class RevisionLoopResult(BaseModel):
     """Result of the revision loop."""
 
-    final_manuscript: Manuscript = Field(..., description="The final manuscript after revisions")
-    iterations: int = Field(default=0, description="Number of revision cycles performed")
-    review_history: list[ReviewReport] = Field(default_factory=list, description="All review reports across iterations")
-    revision_log: list[RevisionRecord] = Field(default_factory=list, description="Chronological revision actions")
-    version_history: list[ManuscriptVersion] = Field(default_factory=list, description="Manuscript versions over time")
+    final_manuscript: Manuscript = Field(
+        ..., description="The final manuscript after revisions"
+    )
+    iterations: int = Field(
+        default=0, description="Number of revision cycles performed"
+    )
+    review_history: list[ReviewReport] = Field(
+        default_factory=list, description="All review reports across iterations"
+    )
+    revision_log: list[RevisionRecord] = Field(
+        default_factory=list, description="Chronological revision actions"
+    )
+    version_history: list[ManuscriptVersion] = Field(
+        default_factory=list, description="Manuscript versions over time"
+    )
     resolved_count: int = Field(default=0)
     unresolved_count: int = Field(default=0)
     completed_at: datetime = Field(default_factory=now_utc)
@@ -116,7 +130,9 @@ class RevisionAgent:
                 break
 
             # Perform revisions
-            current_manuscript = self._apply_revisions(current_manuscript, unresolved, iteration)
+            current_manuscript = self._apply_revisions(
+                current_manuscript, unresolved, iteration
+            )
             current_manuscript.bump_version()
 
             # Record the version
@@ -132,8 +148,12 @@ class RevisionAgent:
         final_report = self._reviewer.review(current_manuscript, known_paper_ids)
         result.review_history.append(final_report)
         result.final_manuscript = current_manuscript
-        result.resolved_count = sum(1 for r in result.review_history for f in r.findings if f.resolved)
-        result.unresolved_count = sum(1 for r in result.review_history[-1].findings if not r.resolved)
+        result.resolved_count = sum(
+            1 for r in result.review_history for f in r.findings if f.resolved
+        )
+        result.unresolved_count = sum(
+            1 for r in result.review_history[-1].findings if not r.resolved
+        )
 
         return result
 
@@ -155,7 +175,9 @@ class RevisionAgent:
 
             # Apply the suggested correction to the section
             if finding.suggested_correction:
-                section.content += f"\n\n[Revision note {iteration}: {finding.suggested_correction}]"
+                section.content += (
+                    f"\n\n[Revision note {iteration}: {finding.suggested_correction}]"
+                )
             else:
                 section.content += f"\n\n[Revision note {iteration}: {finding.title}]"
 

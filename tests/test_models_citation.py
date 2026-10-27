@@ -177,7 +177,9 @@ class TestBibliography:
         assert len(b.references) == 1
 
     def test_to_bibtex(self):
-        r1 = ReferenceRecord(paper_id="p1", title="Paper 1", authors=["Alice"], year=2023)
+        r1 = ReferenceRecord(
+            paper_id="p1", title="Paper 1", authors=["Alice"], year=2023
+        )
         b = Bibliography()
         b.add(r1)
         bibtex = b.to_bibtex()
@@ -185,7 +187,9 @@ class TestBibliography:
         assert "Paper 1" in bibtex
 
     def test_to_csl_json(self):
-        r1 = ReferenceRecord(paper_id="p1", title="Paper 1", authors=["Alice"], year=2023)
+        r1 = ReferenceRecord(
+            paper_id="p1", title="Paper 1", authors=["Alice"], year=2023
+        )
         b = Bibliography()
         b.add(r1)
         csl = b.to_csl_json()
@@ -193,7 +197,9 @@ class TestBibliography:
         assert csl[0]["title"] == "Paper 1"
 
     def test_to_format(self):
-        r1 = ReferenceRecord(paper_id="p1", title="Test Paper", authors=["Alice"], year=2023)
+        r1 = ReferenceRecord(
+            paper_id="p1", title="Test Paper", authors=["Alice"], year=2023
+        )
         b = Bibliography()
         b.add(r1)
         # BibTeX

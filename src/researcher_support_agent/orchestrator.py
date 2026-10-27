@@ -53,7 +53,9 @@ class OrchestratorState(BaseModel):
     """Persistable orchestrator state."""
 
     project_id: str = Field(..., description="Project identifier")
-    phases: dict[str, PhaseState] = Field(default_factory=dict, description="Phase name -> status")
+    phases: dict[str, PhaseState] = Field(
+        default_factory=dict, description="Phase name -> status"
+    )
     metadata: dict[str, Any] = Field(default_factory=dict)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
@@ -97,7 +99,9 @@ class Orchestrator:
         """Return phases to run, skipping already completed ones."""
         return [p for p in PHASE_ORDER if not self.state.is_phase_done(p)]
 
-    def run_phase(self, phase: Phase, handler: Callable[[Phase, OrchestratorState], None]) -> bool:
+    def run_phase(
+        self, phase: Phase, handler: Callable[[Phase, OrchestratorState], None]
+    ) -> bool:
         """Execute a single phase with retry logic.
 
         ``handler`` is a callable(phase: Phase, state: OrchestratorState).

@@ -9,7 +9,9 @@ class ResearchQuestion(BaseModel):
     """A single research question in the review protocol."""
 
     question: str = Field(..., min_length=1)
-    pco: str = Field(default="", description="Population, Intervention/Exposure, Comparison, Outcome")
+    pco: str = Field(
+        default="", description="Population, Intervention/Exposure, Comparison, Outcome"
+    )
     inclusion_criteria: str = Field(default="")
     exclusion_criteria: str = Field(default="")
 

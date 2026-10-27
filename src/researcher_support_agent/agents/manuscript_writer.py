@@ -50,7 +50,9 @@ class ManuscriptWriter:
     each section. Does not fabricate references or numerical results.
     """
 
-    def __init__(self, template: ManuscriptTemplate = ManuscriptTemplate.NARRATIVE_REVIEW) -> None:
+    def __init__(
+        self, template: ManuscriptTemplate = ManuscriptTemplate.NARRATIVE_REVIEW
+    ) -> None:
         self.template = template
 
     def write(

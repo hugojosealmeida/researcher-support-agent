@@ -77,7 +77,9 @@ class TestLiteratureSearchAgent:
         assert len(result.excluded_papers) == 1
 
     def test_agent_preserves_existing_search_results(self) -> None:
-        state = PipelineState(search_results=[SearchItem(title="Old", authors=[], year=2019, venue="V")])
+        state = PipelineState(
+            search_results=[SearchItem(title="Old", authors=[], year=2019, venue="V")]
+        )
         agent = LiteratureSearchAgent()
         result = agent.run(state)
         assert len(result.search_results) == 1
@@ -92,7 +94,9 @@ class TestLiteratureSearchAgent:
 class TestPaperIngestionAgent:
     def test_agent_sets_papers(self) -> None:
         papers = [
-            Paper(title="Paper A", authors=["A"], year=2023, venue="J", md_path="/a.md"),
+            Paper(
+                title="Paper A", authors=["A"], year=2023, venue="J", md_path="/a.md"
+            ),
         ]
         agent = PaperIngestionAgent(papers=papers)
         state = PipelineState()
@@ -101,7 +105,9 @@ class TestPaperIngestionAgent:
         assert result.papers[0].md_path == "/a.md"
 
     def test_empty_agent(self) -> None:
-        state = PipelineState(papers=[Paper(title="Existing", authors=[], year=2023, venue="V")])
+        state = PipelineState(
+            papers=[Paper(title="Existing", authors=[], year=2023, venue="V")]
+        )
         result = PaperIngestionAgent().run(state)
         assert len(result.papers) == 1
 
@@ -183,7 +189,9 @@ class TestReviewPaperWriterAgent:
 class TestAcademicReviewerAgent:
     def test_agent_sets_comments_and_passed(self) -> None:
         comments = [
-            ReviewComment(section="Abstract", severity="critical", comment="Missing key refs"),
+            ReviewComment(
+                section="Abstract", severity="critical", comment="Missing key refs"
+            ),
         ]
         agent = AcademicReviewerAgent(comments=comments, passed=False)
         state = PipelineState()
@@ -199,7 +207,9 @@ class TestAcademicReviewerAgent:
         assert result.review_passed is True
 
     def test_empty_agent(self) -> None:
-        state = PipelineState(review_comments=[ReviewComment(section="X", severity="minor", comment="o")])
+        state = PipelineState(
+            review_comments=[ReviewComment(section="X", severity="minor", comment="o")]
+        )
         result = AcademicReviewerAgent().run(state)
         assert len(result.review_comments) == 1
 

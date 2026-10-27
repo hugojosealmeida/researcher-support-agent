@@ -205,7 +205,9 @@ class EvidenceRepository:
 
     def get_paper(self, paper_id: str) -> dict[str, Any] | None:
         """Retrieve a paper by ID."""
-        row = self._conn.execute("SELECT * FROM papers WHERE id = ?", (paper_id,)).fetchone()
+        row = self._conn.execute(
+            "SELECT * FROM papers WHERE id = ?", (paper_id,)
+        ).fetchone()
         if row is None:
             return None
         d = dict(row)
@@ -215,7 +217,9 @@ class EvidenceRepository:
 
     def list_papers(self) -> list[dict[str, Any]]:
         """List all stored papers."""
-        rows = self._conn.execute("SELECT * FROM papers ORDER BY created_at DESC").fetchall()
+        rows = self._conn.execute(
+            "SELECT * FROM papers ORDER BY created_at DESC"
+        ).fetchall()
         papers = []
         for row in rows:
             d = dict(row)
@@ -313,7 +317,9 @@ class EvidenceRepository:
             (
                 f"{claim.paper_id}_{claim.claim_text[:40].replace(' ', '_')}",
                 claim.claim_text,
-                claim.claim_type.value if hasattr(claim.claim_type, "value") else str(claim.claim_type),
+                claim.claim_type.value
+                if hasattr(claim.claim_type, "value")
+                else str(claim.claim_type),
                 claim.paper_id,
                 claim.confidence,
                 datetime.now(UTC).isoformat(),
@@ -404,11 +410,17 @@ class EvidenceRepository:
 
     def get_evidence_for_claim(self, claim: str) -> list[Evidence]:
         """Retrieve all evidence records for a given claim."""
-        rows = self._conn.execute("SELECT * FROM evidence WHERE claim = ?", (claim,)).fetchall()
+        rows = self._conn.execute(
+            "SELECT * FROM evidence WHERE claim = ?", (claim,)
+        ).fetchall()
         result = []
         for row in rows:
             d = dict(row)
-            d["supporting_paper_ids"] = json.loads(d["supporting_paper_ids"]) if d.get("supporting_paper_ids") else []
+            d["supporting_paper_ids"] = (
+                json.loads(d["supporting_paper_ids"])
+                if d.get("supporting_paper_ids")
+                else []
+            )
             result.append(Evidence(**d))
         return result
 
@@ -439,7 +451,9 @@ class EvidenceRepository:
 
     def get_evidence_pointers(self, paper_id: str) -> list[EvidencePointer]:
         """Retrieve all evidence pointers for a paper."""
-        rows = self._conn.execute("SELECT * FROM evidence_pointers WHERE paper_id = ?", (paper_id,)).fetchall()
+        rows = self._conn.execute(
+            "SELECT * FROM evidence_pointers WHERE paper_id = ?", (paper_id,)
+        ).fetchall()
         result = []
         for row in rows:
             d = dict(row)
@@ -477,7 +491,9 @@ class EvidenceRepository:
 
     def get_citations_from(self, paper_id: str) -> list[CitationRecord]:
         """Get all papers cited by a given paper."""
-        rows = self._conn.execute("SELECT * FROM citations WHERE citing_paper_id = ?", (paper_id,)).fetchall()
+        rows = self._conn.execute(
+            "SELECT * FROM citations WHERE citing_paper_id = ?", (paper_id,)
+        ).fetchall()
         return [
             CitationRecord(
                 citing_paper_id=row["citing_paper_id"],
@@ -489,7 +505,9 @@ class EvidenceRepository:
 
     def get_citations_to(self, paper_id: str) -> list[CitationRecord]:
         """Get all papers that cite a given paper."""
-        rows = self._conn.execute("SELECT * FROM citations WHERE cited_paper_id = ?", (paper_id,)).fetchall()
+        rows = self._conn.execute(
+            "SELECT * FROM citations WHERE cited_paper_id = ?", (paper_id,)
+        ).fetchall()
         return [
             CitationRecord(
                 citing_paper_id=row["citing_paper_id"],
@@ -526,7 +544,9 @@ class EvidenceRepository:
 
     def get_review_findings(self, paper_id: str) -> list[ReviewFinding]:
         """Get review findings for a paper."""
-        rows = self._conn.execute("SELECT * FROM review_findings WHERE paper_id = ?", (paper_id,)).fetchall()
+        rows = self._conn.execute(
+            "SELECT * FROM review_findings WHERE paper_id = ?", (paper_id,)
+        ).fetchall()
         return [
             ReviewFinding(
                 category=row["category"],

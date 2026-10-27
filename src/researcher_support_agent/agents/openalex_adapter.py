@@ -145,7 +145,9 @@ class OpenAlexAdapter(SourceAdapter):
             doi=doi,
             source_id=record.get("id"),
             abstract=abstract,
-            url=f"https://openalex.org/{record.get('id', '')}" if record.get("id") else None,
+            url=f"https://openalex.org/{record.get('id', '')}"
+            if record.get("id")
+            else None,
             retrieval_status="retrieved",
             processing_status="pending",
             metadata={"openalex_id": record.get("id")},
@@ -166,7 +168,9 @@ class OpenAlexAdapter(SourceAdapter):
                         data = json.load(f)
                     start = (query.page - 1) * query.page_size
                     end = start + query.page_size
-                    return cast(list[dict[str, Any]], data.get("results", [])[start:end])
+                    return cast(
+                        list[dict[str, Any]], data.get("results", [])[start:end]
+                    )
                 except FileNotFoundError:
                     pass
 

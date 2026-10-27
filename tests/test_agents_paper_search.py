@@ -49,7 +49,11 @@ class TestOpenAlexAdapter:
         os.environ["OPENALEX_FIXTURE"] = str(openalex_fixture)
         adapter = OpenAlexAdapter()
         try:
-            q = type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})()
+            q = type(
+                "Query",
+                (),
+                {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+            )()
             raw = adapter.search(q)
             assert len(raw) == 2
             papers = [adapter.normalize(r) for r in raw]
@@ -98,7 +102,11 @@ class TestOpenAlexAdapter:
         os.environ["OPENALEX_FIXTURE"] = str(openalex_fixture)
         adapter = OpenAlexAdapter()
         try:
-            q = type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})()
+            q = type(
+                "Query",
+                (),
+                {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+            )()
             raw = adapter.search(q)
             papers = [p for p in (adapter.normalize(r) for r in raw) if p is not None]
             assert papers[0].abstract == "deep learning nlp"
@@ -112,7 +120,11 @@ class TestCrossrefAdapter:
         os.environ["CROSSREF_FIXTURE"] = str(crossref_fixture)
         adapter = CrossrefAdapter()
         try:
-            q = type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})()
+            q = type(
+                "Query",
+                (),
+                {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+            )()
             raw = adapter.search(q)
             assert len(raw) == 2
             papers = [adapter.normalize(r) for r in raw]
@@ -131,7 +143,13 @@ class TestEuropePMCAdapter:
         os.environ["EUROPEPMC_FIXTURE"] = str(europe_pmc_fixture)
         adapter = EuropePMCAdapter()
         try:
-            raw = adapter.search(type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})())
+            raw = adapter.search(
+                type(
+                    "Query",
+                    (),
+                    {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+                )()
+            )
             assert len(raw) == 2
             papers = [adapter.normalize(r) for r in raw]
             papers = [p for p in papers if p is not None]
@@ -148,7 +166,13 @@ class TestEuropePMCAdapter:
         os.environ["EUROPEPMC_FIXTURE"] = str(europe_pmc_fixture)
         adapter = EuropePMCAdapter()
         try:
-            raw = adapter.search(type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})())
+            raw = adapter.search(
+                type(
+                    "Query",
+                    (),
+                    {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+                )()
+            )
             paper = adapter.normalize(raw[1])
             assert paper.abstract is None
         finally:
@@ -160,7 +184,13 @@ class TestArxivAdapter:
         os.environ["ARXIV_FIXTURE"] = str(arxiv_fixture)
         adapter = ArxivAdapter()
         try:
-            raw = adapter.search(type("Query", (), {"page": 1, "page_size": 25, "query": "test", "filters": {}})())
+            raw = adapter.search(
+                type(
+                    "Query",
+                    (),
+                    {"page": 1, "page_size": 25, "query": "test", "filters": {}},
+                )()
+            )
             assert len(raw) == 2
             papers = [adapter.normalize(r) for r in raw]
             papers = [p for p in papers if p is not None]

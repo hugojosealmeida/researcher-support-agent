@@ -78,7 +78,9 @@ class ReviewFinding(BaseModel):
         default="",
         description="What the author should change",
     )
-    resolved: bool = Field(default=False, description="Whether this finding has been addressed")
+    resolved: bool = Field(
+        default=False, description="Whether this finding has been addressed"
+    )
     resolution_note: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=now_utc)
 
@@ -149,7 +151,9 @@ class ReviewReport(BaseModel):
         total = len(self.findings)
         unresolved = len(self.get_unresolved())
         critical = len(self.get_critical_findings())
-        lines.append(f"**Total findings:** {total} | **Unresolved:** {unresolved} | **Critical:** {critical}")
+        lines.append(
+            f"**Total findings:** {total} | **Unresolved:** {unresolved} | **Critical:** {critical}"
+        )
         lines.append("")
 
         # Group by pass

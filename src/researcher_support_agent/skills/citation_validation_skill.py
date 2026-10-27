@@ -51,7 +51,9 @@ class CitationValidationSkill:
         issues: list[str] = []
         unresolved = manuscript.validate_citations(known_paper_ids)
         for pid in unresolved:
-            issues.append(f"Unresolved citation: '{pid}' is cited in the manuscript but not found in known papers.")
+            issues.append(
+                f"Unresolved citation: '{pid}' is cited in the manuscript but not found in known papers."
+            )
         return issues
 
     def _validate_no_fabrication(
@@ -78,7 +80,9 @@ class CitationValidationSkill:
         seen: set[str] = set()
         for ref_id in manuscript.reference_ids:
             if ref_id in seen:
-                issues.append(f"Duplicate reference: '{ref_id}' appears multiple times in the bibliography.")
+                issues.append(
+                    f"Duplicate reference: '{ref_id}' appears multiple times in the bibliography."
+                )
             seen.add(ref_id)
         return issues
 
@@ -94,7 +98,9 @@ class CitationValidationSkill:
         # Check for papers cited but not in reference list
         missing_refs = cited_ids - set(manuscript.reference_ids)
         if missing_refs:
-            issues.append(f"Papers cited in text but not in reference list: {sorted(missing_refs)}")
+            issues.append(
+                f"Papers cited in text but not in reference list: {sorted(missing_refs)}"
+            )
 
         # Check for reference list entries not cited
         uncited = set(manuscript.reference_ids) - cited_ids
@@ -129,7 +135,9 @@ def validate_author_names(authors: list[str]) -> list[str]:
         if not name or not name.strip():
             issues.append(f"Author at position {i + 1} is empty.")
         elif len(name.strip()) < 2:
-            issues.append(f"Author at position {i + 1} ('{name.strip()}') appears too short.")
+            issues.append(
+                f"Author at position {i + 1} ('{name.strip()}') appears too short."
+            )
     return issues
 
 

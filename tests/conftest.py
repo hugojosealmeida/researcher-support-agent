@@ -52,7 +52,13 @@ def openalex_fixture(tmp_path: Path) -> Path:
                         "author": {
                             "display_name": "Alice Smith",
                             "orcid": "https://orcid.org/0000-0001-2345-6789",
-                            "affiliations": [{"institution": {"display_name": "University of Example"}}],
+                            "affiliations": [
+                                {
+                                    "institution": {
+                                        "display_name": "University of Example"
+                                    }
+                                }
+                            ],
                         }
                     },
                     {"author": {"display_name": "Bob Jones"}},

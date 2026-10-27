@@ -58,7 +58,9 @@ class ReferenceRecord(BaseModel):
     url: str | None = Field(default=None)
     publisher: str | None = Field(default=None)
     venue: str | None = Field(default=None)
-    citation_key: str | None = Field(default=None, description="Citation key for in-text use")
+    citation_key: str | None = Field(
+        default=None, description="Citation key for in-text use"
+    )
     created_at: datetime = Field(default_factory=now_utc)
     metadata: dict[str, str] = Field(default_factory=dict)
 
@@ -77,7 +79,11 @@ class ReferenceRecord(BaseModel):
         first_author = self.authors[0] if self.authors else "Unknown"
         short_name = first_author.split()[-1] if first_author else "anon"
         year = str(self.year) if self.year else "nd"
-        title_words = [w for w in self.title.split() if w.lower() not in ("a", "an", "the", "of", "and")]
+        title_words = [
+            w
+            for w in self.title.split()
+            if w.lower() not in ("a", "an", "the", "of", "and")
+        ]
         title_short = title_words[0] if title_words else "paper"
         self.citation_key = f"{short_name}{year}{title_short[:3]}"
         return self.citation_key
@@ -275,7 +281,11 @@ class Bibliography(BaseModel):
         seen: dict[str, list[str]] = {}
         for ref in self.references:
             seen.setdefault(ref.paper_id, []).append(ref.id)
-        return [(ref_id, record_id) for ref_id, record_ids in seen.items() for record_id in record_ids[1:]]
+        return [
+            (ref_id, record_id)
+            for ref_id, record_ids in seen.items()
+            for record_id in record_ids[1:]
+        ]
 
     def to_bibtex(self) -> str:
         """Export the entire bibliography as a BibTeX string."""
@@ -293,13 +303,18 @@ class Bibliography(BaseModel):
         format_map: dict[ReferenceFormat, Callable[[], str]] = {
             ReferenceFormat.BIBTEX: lambda: self.to_bibtex(),
             ReferenceFormat.CSL_JSON: lambda: json.dumps(self.to_csl_json()),
-            ReferenceFormat.APA: lambda: "\n".join(f"{i + 1}. {ref.to_apa()}" for i, ref in enumerate(self.references)),
-            ReferenceFormat.MLA: lambda: "\n".join(f"{i + 1}. {ref.to_mla()}" for i, ref in enumerate(self.references)),
+            ReferenceFormat.APA: lambda: "\n".join(
+                f"{i + 1}. {ref.to_apa()}" for i, ref in enumerate(self.references)
+            ),
+            ReferenceFormat.MLA: lambda: "\n".join(
+                f"{i + 1}. {ref.to_mla()}" for i, ref in enumerate(self.references)
+            ),
             ReferenceFormat.CHICAGO: lambda: "\n".join(
                 f"{i + 1}. {ref.to_chicago()}" for i, ref in enumerate(self.references)
             ),
             ReferenceFormat.VANCOUR: lambda: "\n".join(
-                f"{i + 1}. {ref.to_vancouver()}" for i, ref in enumerate(self.references)
+                f"{i + 1}. {ref.to_vancouver()}"
+                for i, ref in enumerate(self.references)
             ),
         }
         return format_map[fmt]()

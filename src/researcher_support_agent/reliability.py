@@ -95,7 +95,9 @@ class RetryPolicy:
                     )
             except Exception as exc:
                 # Non-expected exceptions are treated as non-retryable
-                raise NonRetryableError(f"Unexpected error (non-retryable): {exc}") from exc
+                raise NonRetryableError(
+                    f"Unexpected error (non-retryable): {exc}"
+                ) from exc
         assert last_exc is not None
         raise last_exc
 
@@ -249,7 +251,9 @@ class TokenTracker:
         self.output_tokens: int = 0
         self.token_cost_per_million = token_cost_per_million
         self.input_cost_per_million = (
-            token_cost_per_million if input_cost_per_million is None else input_cost_per_million
+            token_cost_per_million
+            if input_cost_per_million is None
+            else input_cost_per_million
         )
 
     def record_input(self, tokens: int) -> None:
@@ -308,7 +312,9 @@ def sanitize_pdf_text(text: str) -> str:
         return ""
 
     # Remove control characters except common whitespace
-    cleaned = "".join(ch for ch in text if ch in "\n\r\t" or (ord(ch) >= 0x20 and ord(ch) != 0x7F))
+    cleaned = "".join(
+        ch for ch in text if ch in "\n\r\t" or (ord(ch) >= 0x20 and ord(ch) != 0x7F)
+    )
 
     # Strip known instruction-injection patterns (case-insensitive)
     injection_patterns = [
@@ -408,7 +414,9 @@ def load_checkpoint(project_id: str, checkpoint_dir: str | None = None) -> Check
             data = json.load(f)
         checkpoint = Checkpoint.from_dict(data)
         if checkpoint.project_id != project_id:
-            raise ValueError(f"Checkpoint project_id mismatch: expected {project_id!r}, got {checkpoint.project_id!r}")
+            raise ValueError(
+                f"Checkpoint project_id mismatch: expected {project_id!r}, got {checkpoint.project_id!r}"
+            )
         logger.info("checkpoint_loaded project=%s", project_id)
         return checkpoint
     checkpoint = Checkpoint(project_id=project_id)
