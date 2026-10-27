@@ -433,7 +433,7 @@ class EvidenceRepository:
         """Store an evidence pointer to a specific location in a paper."""
         self._conn.execute(
             """
-            INSERT INTO evidence_pointers
+            INSERT OR REPLACE INTO evidence_pointers
                 (id, paper_id, section, page, table_ref, figure_ref, description, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
