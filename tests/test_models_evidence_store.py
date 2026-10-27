@@ -94,6 +94,98 @@ class TestEvidenceRepository:
         assert "Markdown Test" in content
         assert "Author-reported" in content
 
+    def test_research_note_round_trips_evidence_pointers(self, repo):
+        note = ResearchNote(
+            paper_id="paper-1",
+            title="Test Paper",
+            year=2023,
+            main_results="X improves Y.",
+            evidence_pointers=[
+                EvidencePointer(
+                    paper_id="paper-1",
+                    section="Results",
+                    page=5,
+                    table="Table 1",
+                    description="Primary outcome reported in Table 1.",
+                ),
+                EvidencePointer(
+                    paper_id="paper-1",
+                    section="Methodology",
+                    figure="Figure 2",
+                    description="Study flow diagram.",
+                ),
+                EvidencePointer(
+                    paper_id="paper-1",
+                    description="Appendix material with no section anchor.",
+                ),
+            ],
+        )
+        repo.store_research_note(note)
+        result = repo.get_research_note("paper-1")
+        assert result is not None
+        assert len(result.evidence_pointers) == 3
+        assert result.evidence_pointers == note.evidence_pointers
+
+    def test_research_note_restore_does_not_duplicate_pointers(self, repo):
+        note = ResearchNote(
+            paper_id="paper-1",
+            title="Test Paper",
+            evidence_pointers=[
+                EvidencePointer(
+                    paper_id="paper-1",
+                    section="Results",
+                    description="Main results.",
+                ),
+                EvidencePointer(
+                    paper_id="paper-1",
+                    section="Limitations",
+                    description="Sample size limits generalizability.",
+                ),
+            ],
+        )
+        repo.store_research_note(note)
+        repo.store_research_note(note)
+        rows = repo._conn.execute("SELECT COUNT(*) FROM evidence_pointers").fetchone()[
+            0
+        ]
+        assert rows == 2
+        result = repo.get_research_note("paper-1")
+        assert result is not None
+        assert result.evidence_pointers == note.evidence_pointers
+
+    def test_research_note_without_pointers_round_trips(self, repo):
+        note = ResearchNote(
+            paper_id="paper-1",
+            title="Test Paper",
+            main_results="Nothing cited.",
+        )
+        repo.store_research_note(note)
+        result = repo.get_research_note("paper-1")
+        assert result is not None
+        assert result.evidence_pointers == []
+        assert result.main_results == "Nothing cited."
+
+    def test_research_note_title_round_trips_when_paper_stored_first(self, repo):
+        """Title/year are sourced from papers, so store the paper before the note."""
+        repo.store_paper({"id": "paper-1", "title": "Real Title", "year": 2023})
+        repo.store_research_note(
+            ResearchNote(paper_id="paper-1", title="Real Title", year=2023)
+        )
+        result = repo.get_research_note("paper-1")
+        assert result is not None
+        assert result.title == "Real Title"
+        assert result.year == 2023
+
+    def test_research_note_title_falls_back_to_unknown_without_paper(self, repo):
+        """An orphan note reports "Unknown" instead of inventing a title."""
+        repo.store_research_note(
+            ResearchNote(paper_id="orphan-1", title="Never Stored Paper")
+        )
+        result = repo.get_research_note("orphan-1")
+        assert result is not None
+        assert result.title == "Unknown"
+        assert result.year is None
+
     def test_store_and_get_claims_from_paper(self, repo):
         claim = ExtractedClaim(
             claim_text="X improves Y.",

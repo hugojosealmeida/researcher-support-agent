@@ -7,6 +7,8 @@ readable artifacts.
 Acceptance criteria:
 - Retrieve all papers supporting a claim and all claims derived from a given paper.
 - Maintain claim-to-source mapping so every statement can be traced back.
+- Research notes retain their evidence pointers (sections/pages/tables/figures)
+  across a store/load round trip.
 """
 
 from __future__ import annotations
@@ -233,7 +235,21 @@ class EvidenceRepository:
     # ------------------------------------------------------------------
 
     def store_research_note(self, note: ResearchNote) -> None:
-        """Store a research note and optionally write a Markdown artifact."""
+        """Store a research note, its evidence pointers, and a Markdown artifact.
+
+        Every ``note.evidence_pointers`` entry is persisted through
+        :meth:`store_evidence_pointer`, reusing its idempotent key so storing the
+        same note twice does not duplicate pointers. Pointer rows are keyed by
+        ``paper_id``, so a pointer that references a different paper than the
+        note is not returned by :meth:`get_research_note`. Persisting is
+        additive: pointers dropped from a later revision of the note are not
+        deleted from the table.
+
+        ``title`` and ``year`` are not duplicated into ``research_notes``; they
+        are derived from the ``papers`` table on retrieval. Store the paper with
+        :meth:`store_paper` *before* the note so both fields round-trip,
+        otherwise :meth:`get_research_note` falls back to ``"Unknown"``.
+        """
         self._conn.execute(
             """
             INSERT OR REPLACE INTO research_notes
@@ -261,6 +277,11 @@ class EvidenceRepository:
             ),
         )
 
+        # Persist provenance anchors so that every statement in the note can be
+        # traced back to a location in the source paper.
+        for pointer in note.evidence_pointers:
+            self.store_evidence_pointer(pointer)
+
         # Write Markdown artifact if artifacts_dir is configured
         if self.artifacts_dir:
             Path(self.artifacts_dir).mkdir(parents=True, exist_ok=True)
@@ -271,7 +292,14 @@ class EvidenceRepository:
         self._conn.commit()
 
     def get_research_note(self, paper_id: str) -> ResearchNote | None:
-        """Retrieve a research note by paper ID."""
+        """Retrieve a research note, with its evidence pointers, by paper ID.
+
+        Pointers are read back from ``evidence_pointers`` so that provenance
+        anchors survive a store/load round trip. ``title`` and ``year`` come
+        from the joined ``papers`` row: if the paper was never stored (or was
+        stored under a different ID) they fall back to ``"Unknown"``/``None``
+        rather than being invented.
+        """
         row = self._conn.execute(
             """
             SELECT rn.*, p.title as paper_title, p.year as year
@@ -300,6 +328,7 @@ class EvidenceRepository:
             open_questions=d.get("open_questions", "Unknown"),
             relevance_to_review=d.get("relevance_to_review", "Unknown"),
             agent_interpretation=d.get("agent_interpretation", "Unknown"),
+            evidence_pointers=self.get_evidence_pointers(d["paper_id"]),
             created_at=datetime.fromisoformat(d["created_at"]),
         )
 
@@ -451,9 +480,19 @@ class EvidenceRepository:
         self._conn.commit()
 
     def get_evidence_pointers(self, paper_id: str) -> list[EvidencePointer]:
-        """Retrieve all evidence pointers for a paper."""
+        """Retrieve all evidence pointers stored for a paper, oldest row first.
+
+        Ordering by ``rowid`` makes the result deterministic, so a note loaded
+        back through :meth:`get_research_note` reports its pointers in the order
+        they were written instead of in arbitrary table order.
+        """
         rows = self._conn.execute(
-            "SELECT * FROM evidence_pointers WHERE paper_id = ?", (paper_id,)
+            """
+            SELECT * FROM evidence_pointers
+            WHERE paper_id = ?
+            ORDER BY rowid
+            """,
+            (paper_id,),
         ).fetchall()
         result = []
         for row in rows:
