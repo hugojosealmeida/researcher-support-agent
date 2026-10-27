@@ -31,40 +31,42 @@ logger = get_logger(__name__)
 
 try:
     import requests
-    from requests.exceptions import (
-        ConnectionError as RequestsConnectionError,
-    )
-    from requests.exceptions import (
-        HTTPError as RequestsHTTPError,
-    )
-    from requests.exceptions import (
-        RequestException as RequestsRequestException,
-    )
-    from requests.exceptions import (
-        Timeout as RequestsTimeout,
-    )
-
-    # Flattened so ``isinstance`` never receives nested non-type tuples when
-    # the fallback aliases below degrade to ``()``.
-    RETRYABLE_TRANSPORT_ERRORS: tuple[type[Exception], ...] = (
-        RequestsConnectionError,
-        RequestsTimeout,
-    )
 
     REQUESTS_AVAILABLE = True
 except ImportError:  # pragma: no cover - requests is a declared dependency
     REQUESTS_AVAILABLE = False
-    # Empty tuples keep ``isinstance``/``except`` guards valid (never matching)
-    # in a broken install; ``get_http_client`` raises before any HTTP call.
-    RequestsConnectionError: Any = ()
-    RequestsHTTPError: Any = ()
-    RequestsRequestException: Any = ()
-    RequestsTimeout: Any = ()
-    RETRYABLE_TRANSPORT_ERRORS = ()
     logger.warning(
         "http_library_missing: 'requests' is not installed; live scholarly "
         "API searches will fail. Reinstall with 'pip install -e .'."
     )
+
+# ``requests`` exception aliases used by the helpers below, each bound exactly
+# once at module level: importing them inside the ``try`` and re-binding them
+# in ``except ImportError`` is a ``mypy --strict`` ``no-redef`` error.  The
+# real classes are resolved off ``requests.exceptions`` only when the library
+# imported cleanly.  Under a broken install the aliases degrade to empty
+# tuples, which keeps ``isinstance``/``except`` guards valid (never matching);
+# ``get_http_client`` raises before any HTTP call anyway.
+RequestsConnectionError: Any
+RequestsHTTPError: Any
+RequestsRequestException: Any
+RequestsTimeout: Any
+# Flattened so ``isinstance`` never receives nested non-type tuples when the
+# aliases degrade to ``()``.
+RETRYABLE_TRANSPORT_ERRORS: tuple[type[Exception], ...]
+
+if REQUESTS_AVAILABLE:
+    RequestsConnectionError = requests.exceptions.ConnectionError
+    RequestsHTTPError = requests.exceptions.HTTPError
+    RequestsRequestException = requests.exceptions.RequestException
+    RequestsTimeout = requests.exceptions.Timeout
+    RETRYABLE_TRANSPORT_ERRORS = (RequestsConnectionError, RequestsTimeout)
+else:  # pragma: no cover - requests is a declared dependency
+    RequestsConnectionError = ()
+    RequestsHTTPError = ()
+    RequestsRequestException = ()
+    RequestsTimeout = ()
+    RETRYABLE_TRANSPORT_ERRORS = ()
 
 
 def get_http_client(source_name: str = "") -> Any:
