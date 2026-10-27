@@ -155,6 +155,16 @@ class TestManuscriptWriter:
         for ref_id in result.manuscript.reference_ids:
             assert ref_id in known_paper_ids, f"Fabricated reference: {ref_id}"
 
+    def test_empty_notes_no_citation_ids(self, writer, sample_papers):
+        result = writer.write(
+            title="Test Review",
+            synthesis_notes=[],
+            papers=sample_papers,
+        )
+        assert all(cited == [] for cited in result.citations_used.values())
+        for cited in result.citations_used.values():
+            assert "" not in cited
+
     def test_stable_ids_used_for_paper_lookup(self, writer):
         from datetime import UTC, datetime
 
