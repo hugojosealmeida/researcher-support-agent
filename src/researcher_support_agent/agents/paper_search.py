@@ -94,35 +94,61 @@ class PaperSearchAgent:
         query string (returns a list of deduplicated ``Paper`` records).
         """
         if isinstance(query, SearchQuery):
+            query_string = query.query or " AND ".join(query.terms)
+            used_adapters = self._select_adapters(sources or query.databases)
+            papers, total_results = self._collect_papers(
+                query_string,
+                used_adapters,
+                date_from or query.date_from,
+                date_to or query.date_to,
+            )
             return PaperSearchResult(
                 query=query,
-                papers=[],
-                total_results=0,
-                source=query.databases[0]
-                if getattr(query, "databases", None)
-                else "multiple",
+                papers=papers,
+                total_results=total_results,
+                source=query.databases[0] if query.databases else "multiple",
             )
 
         query_string = str(query)
-        all_raw: list[dict[str, Any]] = []
-        used_adapters: list[SourceAdapter] = self.adapters
-        if sources:
-            used_adapters = [a for a in self.adapters if a.source_name in sources]
+        used_adapters = self._select_adapters(sources)
+        papers, _total = self._collect_papers(
+            query_string, used_adapters, date_from, date_to
+        )
+        return papers
 
+    def _select_adapters(self, sources: list[str] | None) -> list[SourceAdapter]:
+        """Pick the adapters whose ``source_name`` matches ``sources``.
+
+        An empty/omitted selection searches every registered adapter.
+        """
+        if not sources:
+            return list(self.adapters)
+        wanted = {name.lower() for name in sources}
+        return [a for a in self.adapters if a.source_name.lower() in wanted]
+
+    def _collect_papers(
+        self,
+        query_string: str,
+        used_adapters: list[SourceAdapter],
+        date_from: str | None,
+        date_to: str | None,
+    ) -> tuple[list[Paper], int]:
+        """Run adapters page-by-page and return deduplicated papers plus
+        the total result count reported by the sources.
+        """
+        all_raw: list[dict[str, Any]] = []
+        totals: dict[str, int] = {}
         for adapter in used_adapters:
+            adapter_total = 0
             for page in range(1, self.max_pages + 1):
-                q = type(
-                    "Query",
-                    (),
-                    {
-                        "page": page,
-                        "page_size": self.page_size,
-                        "query": query_string,
-                        "filters": {},
-                        "database": adapter.source_name,
-                        "results_count": 0,
-                    },
-                )()
+                q = SearchQuery(
+                    terms=[query_string] if query_string else ["all"],
+                    query=query_string,
+                    page=page,
+                    page_size=self.page_size,
+                    database=adapter.source_name,
+                    filters={},
+                )
                 if date_from:
                     q.filters["date_from"] = date_from
                 if date_to:
@@ -130,8 +156,12 @@ class PaperSearchAgent:
 
                 raw_results = adapter.search(q)
                 all_raw.extend(raw_results)
+                # Adapters update ``results_count`` with the source-reported
+                # total on the query object they receive.
+                adapter_total = max(adapter_total, q.results_count)
                 if len(raw_results) < self.page_size:
                     break
+            totals[adapter.source_name] = adapter_total
 
         papers: list[Paper] = []
         for raw in all_raw:
@@ -153,7 +183,11 @@ class PaperSearchAgent:
                 )
                 papers.append(paper)
 
-        return deduplicate_papers(papers)
+        deduplicated = deduplicate_papers(papers)
+        # Fixture-backed adapters never populate ``results_count``; fall back
+        # to the number of papers actually collected.
+        total_results = sum(totals.values()) or len(deduplicated)
+        return deduplicated, total_results
 
     def search_multiple(self, queries: list[SearchQuery]) -> list[PaperSearchResult]:
         """Execute multiple searches."""
