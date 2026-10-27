@@ -14,6 +14,7 @@ from researcher_support_agent.agents.openalex_adapter import OpenAlexAdapter
 from researcher_support_agent.agents.paper_search import (
     PaperSearchAgent,
     PaperSearchResult,
+    SourceAdapter,
     deduplicate_papers,
 )
 from researcher_support_agent.models.paper import Paper
@@ -313,6 +314,10 @@ class TestPaperSearchAgentBasic:
         assert isinstance(result, PaperSearchResult)
         assert result.query == query
         assert result.source == "PubMed"
+        # No adapters are registered, so nothing can be found — but the
+        # search must still execute the real pipeline instead of a stub.
+        assert result.papers == []
+        assert result.total_results == 0
 
     def test_search_multiple(self):
         agent = PaperSearchAgent()
@@ -324,6 +329,172 @@ class TestPaperSearchAgentBasic:
         assert len(results) == 2
         for r in results:
             assert isinstance(r, PaperSearchResult)
+
+
+class _RecordingAdapter(SourceAdapter):
+    """In-memory adapter that records the queries it receives."""
+
+    def __init__(
+        self,
+        source_name: str,
+        results: list[dict[str, Any]] | None = None,
+        reported_total: int | None = None,
+    ) -> None:
+        self.source_name = source_name
+        self.queries: list[Any] = []
+        self._results = results if results is not None else []
+        self._reported_total = reported_total
+
+    def search(self, query: Any) -> list[dict[str, Any]]:
+        self.queries.append(query)
+        if self._reported_total is not None:
+            query.results_count = self._reported_total
+        return list(self._results)
+
+    def normalize(self, raw: dict[str, Any]) -> Paper | None:
+        if not raw.get("title"):
+            return None
+        return Paper(title=raw["title"], doi=raw.get("doi"), source_id=raw.get("id"))
+
+
+class TestPaperSearchAgentSearchQuery:
+    """``search(SearchQuery(...))`` must run the real adapters, not a stub."""
+
+    def test_typed_search_returns_papers_with_fixtures(
+        self, openalex_fixture, crossref_fixture
+    ):
+        os.environ["OPENALEX_FIXTURE"] = str(openalex_fixture)
+        try:
+            agent = PaperSearchAgent(
+                adapters=[OpenAlexAdapter(), CrossrefAdapter()],
+                max_pages=1,
+                page_size=10,
+            )
+            result = agent.search(
+                SearchQuery(terms=["deep learning"], databases=["openalex"])
+            )
+            assert isinstance(result, PaperSearchResult)
+            assert result.papers, "typed search must return adapter results"
+            assert result.total_results > 0
+            assert result.source == "openalex"
+            # Only the selected database was searched.
+            titles = {p.title for p in result.papers}
+            assert "Deep Learning for Natural Language Processing" in titles
+            assert "Bayesian Methods in Clinical Trials" not in titles
+            prov = result.papers[0].metadata["query_provenance"]
+            assert prov["query"] == "deep learning"
+            assert prov["sources"] == ["openalex"]
+        finally:
+            os.environ.pop("OPENALEX_FIXTURE", None)
+
+    def test_databases_filtering_selects_matching_adapters(self):
+        alpha = _RecordingAdapter(
+            "alpha", results=[{"title": "From Alpha", "id": "A1"}]
+        )
+        beta = _RecordingAdapter("beta", results=[{"title": "From Beta", "id": "B1"}])
+        agent = PaperSearchAgent(adapters=[alpha, beta], max_pages=1, page_size=10)
+
+        result = agent.search(SearchQuery(terms=["x"], databases=["alpha"]))
+        assert [p.title for p in result.papers] == ["From Alpha"]
+        assert alpha.queries, "selected adapter must be invoked"
+        assert not beta.queries, "unselected adapter must not be invoked"
+        assert result.total_results == 1
+
+    def test_databases_filtering_is_case_insensitive(self):
+        adapter = _RecordingAdapter("openalex", results=[{"title": "From OpenAlex"}])
+        agent = PaperSearchAgent(adapters=[adapter], max_pages=1, page_size=10)
+        result = agent.search(SearchQuery(terms=["x"], databases=["OpenAlex"]))
+        assert [p.title for p in result.papers] == ["From OpenAlex"]
+
+    def test_empty_databases_searches_all_adapters(self):
+        alpha = _RecordingAdapter(
+            "alpha", results=[{"title": "From Alpha", "id": "A1"}]
+        )
+        beta = _RecordingAdapter("beta", results=[{"title": "From Beta", "id": "B1"}])
+        agent = PaperSearchAgent(adapters=[alpha, beta], max_pages=1, page_size=10)
+
+        result = agent.search(SearchQuery(terms=["x"]))
+        assert alpha.queries and beta.queries
+        assert {p.title for p in result.papers} == {"From Alpha", "From Beta"}
+        assert result.source == "multiple"
+
+    def test_query_string_prefers_query_then_joins_terms_with_and(self):
+        alpha = _RecordingAdapter("alpha")
+        agent = PaperSearchAgent(adapters=[alpha], max_pages=1, page_size=10)
+
+        agent.search(SearchQuery(terms=["a", "b"]))
+        assert alpha.queries[-1].query == "a AND b"
+
+        agent.search(SearchQuery(terms=["ignored"], query="explicit text"))
+        assert alpha.queries[-1].query == "explicit text"
+
+    def test_date_filters_are_passed_through(self):
+        alpha = _RecordingAdapter("alpha")
+        agent = PaperSearchAgent(adapters=[alpha], max_pages=1, page_size=10)
+
+        agent.search(
+            SearchQuery(
+                terms=["x"],
+                databases=["alpha"],
+                date_from="2020-01-01",
+                date_to="2024-12-31",
+            )
+        )
+        filters = alpha.queries[-1].filters
+        assert filters["date_from"] == "2020-01-01"
+        assert filters["date_to"] == "2024-12-31"
+
+    def test_total_results_from_adapter_results_count(self):
+        alpha = _RecordingAdapter(
+            "alpha",
+            results=[{"title": f"P{page}", "id": str(page)} for page in range(10)],
+            reported_total=500,
+        )
+        agent = PaperSearchAgent(adapters=[alpha], max_pages=1, page_size=10)
+
+        result = agent.search(SearchQuery(terms=["x"], databases=["alpha"]))
+        # The source-reported total wins over the number of returned papers.
+        assert result.total_results == 500
+        assert len(result.papers) == 10
+
+    def test_typed_search_deduplicates_across_sources(self):
+        alpha = _RecordingAdapter(
+            "alpha", results=[{"title": "Same", "id": "1", "doi": "10.1/x"}]
+        )
+        beta = _RecordingAdapter(
+            "beta", results=[{"title": "Same", "id": "2", "doi": "10.1/x"}]
+        )
+        agent = PaperSearchAgent(adapters=[alpha, beta], max_pages=1, page_size=10)
+        result = agent.search(SearchQuery(terms=["x"]))
+        assert len(result.papers) == 1
+
+    def test_search_multiple_returns_real_results(
+        self, openalex_fixture, arxiv_fixture
+    ):
+        os.environ["OPENALEX_FIXTURE"] = str(openalex_fixture)
+        os.environ["ARXIV_FIXTURE"] = str(arxiv_fixture)
+        try:
+            agent = PaperSearchAgent(
+                adapters=[OpenAlexAdapter(), ArxivAdapter()],
+                max_pages=1,
+                page_size=10,
+            )
+            results = agent.search_multiple(
+                [
+                    SearchQuery(terms=["deep learning"], databases=["openalex"]),
+                    SearchQuery(terms=["attention"], databases=["arxiv"]),
+                ]
+            )
+            assert len(results) == 2
+            for r in results:
+                assert r.papers, "search_multiple must not return empty results"
+                assert r.total_results > 0
+            titles = {r.papers[0].title for r in results}
+            assert "Deep Learning for Natural Language Processing" in titles
+            assert "Attention Is All You Need Revisited" in titles
+        finally:
+            os.environ.pop("OPENALEX_FIXTURE", None)
+            os.environ.pop("ARXIV_FIXTURE", None)
 
 
 class TestHttpGetClient:
