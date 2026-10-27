@@ -9,6 +9,7 @@ from typing import Any, cast
 from ..models.paper import Author, Paper
 from ..models.query import SearchQuery
 from ..reliability import RateLimiter, RetryableError, RetryPolicy
+from .http_client import get_http_client
 from .paper_search import SourceAdapter
 
 BASE_URL = "https://api.openalex.org"
@@ -174,17 +175,13 @@ class OpenAlexAdapter(SourceAdapter):
                 except FileNotFoundError:
                     pass
 
-            try:
-                import requests
-
-                url = self._build_url(query)
-                resp = requests.get(url, timeout=30)
-                resp.raise_for_status()
-                data = resp.json()
-                query.results_count = data.get("count", 0)
-                return cast(list[dict[str, Any]], data.get("results", []))
-            except ImportError:
-                return []
+            url = self._build_url(query)
+            client = get_http_client(self.source_name)
+            resp = client.get(url, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            query.results_count = data.get("count", 0)
+            return cast(list[dict[str, Any]], data.get("results", []))
 
         return self.retry_policy.execute(_do_search)
 

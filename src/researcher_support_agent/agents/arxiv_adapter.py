@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import contextlib
 import os
+import xml.etree.ElementTree as ET
 from typing import Any, cast
 
 from ..models.paper import Author, Paper
 from ..models.query import SearchQuery
 from ..reliability import RateLimiter, RetryableError, RetryPolicy
+from .http_client import get_http_client
 from .paper_search import SourceAdapter
 
 BASE_URL = "http://export.arxiv.org/api/query"
@@ -113,39 +115,34 @@ class ArxivAdapter(SourceAdapter):
                 except FileNotFoundError:
                     pass
 
-            try:
-                import requests
+            client = get_http_client(self.source_name)
+            resp = client.get(url, timeout=30)
+            resp.raise_for_status()
 
-                resp = requests.get(url, timeout=30)
-                resp.raise_for_status()
-                import xml.etree.ElementTree as ET
+            ns = {
+                "atom": "http://www.w3.org/2005/Atom",
+                "arxiv": "http://arxiv.org/schemas/atom",
+            }
+            root = ET.fromstring(resp.content)
+            entries_raw = root.findall("atom:entry", ns)
 
-                ns = {
-                    "atom": "http://www.w3.org/2005/Atom",
-                    "arxiv": "http://arxiv.org/schemas/atom",
-                }
-                root = ET.fromstring(resp.content)
-                entries_raw = root.findall("atom:entry", ns)
+            total = root.find("atom:totalResults", ns)
+            if total is not None and total.text is not None:
+                query.results_count = int(total.text)
 
-                total = root.find("atom:totalResults", ns)
-                if total is not None and total.text is not None:
-                    query.results_count = int(total.text)
-
-                parsed_entries: list[dict[str, Any]] = []
-                for entry in entries_raw:
-                    record: dict[str, Any] = {}
-                    record["title"] = entry.findtext("atom:title", "", ns).strip()
-                    record["id"] = entry.findtext("atom:id", "", ns)
-                    record["summary"] = entry.findtext("atom:summary", "", ns).strip()
-                    record["published"] = entry.findtext("atom:published", "", ns)
-                    authors_el = entry.findall("atom:author", ns)
-                    record["authors"] = [
-                        {"name": a.findtext("atom:name", "", ns)} for a in authors_el
-                    ]
-                    parsed_entries.append(record)
-                return parsed_entries
-            except ImportError:
-                return []
+            parsed_entries: list[dict[str, Any]] = []
+            for entry in entries_raw:
+                record: dict[str, Any] = {}
+                record["title"] = entry.findtext("atom:title", "", ns).strip()
+                record["id"] = entry.findtext("atom:id", "", ns)
+                record["summary"] = entry.findtext("atom:summary", "", ns).strip()
+                record["published"] = entry.findtext("atom:published", "", ns)
+                authors_el = entry.findall("atom:author", ns)
+                record["authors"] = [
+                    {"name": a.findtext("atom:name", "", ns)} for a in authors_el
+                ]
+                parsed_entries.append(record)
+            return parsed_entries
 
         return self.retry_policy.execute(_do_search)
 

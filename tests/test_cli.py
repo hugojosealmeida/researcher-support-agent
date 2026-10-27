@@ -24,6 +24,7 @@ class TestCLI:
         result = runner.invoke(app, ["doctor"])
         assert result.exit_code == 0
         assert "Health check passed" in result.output
+        assert "Package: requests" in result.output
 
     def test_doctor_verbose(self):
         result = runner.invoke(app, ["doctor", "--verbose"])
