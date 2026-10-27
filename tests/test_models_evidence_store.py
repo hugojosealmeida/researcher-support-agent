@@ -161,9 +161,9 @@ class TestEvidenceRepository:
         )
         repo.store_evidence_pointer(ptr)
         repo.store_evidence_pointer(ptr)
-        rows = repo._conn.execute(
-            "SELECT COUNT(*) FROM evidence_pointers"
-        ).fetchone()[0]
+        rows = repo._conn.execute("SELECT COUNT(*) FROM evidence_pointers").fetchone()[
+            0
+        ]
         assert rows == 1
         pointers = repo.get_evidence_pointers("paper-1")
         assert len(pointers) == 1
