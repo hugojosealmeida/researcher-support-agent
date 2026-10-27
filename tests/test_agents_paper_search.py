@@ -141,8 +141,14 @@ class TestCrossrefAdapter:
 class TestCrossrefTitleNormalization:
     def test_string_and_list_titles(self):
         adapter = CrossrefAdapter()
-        assert adapter.normalize({"title": "Full Title String"}).title == "Full Title String"
-        assert adapter.normalize({"title": ["Full Title String"]}).title == "Full Title String"
+        assert (
+            adapter.normalize({"title": "Full Title String"}).title
+            == "Full Title String"
+        )
+        assert (
+            adapter.normalize({"title": ["Full Title String"]}).title
+            == "Full Title String"
+        )
         assert adapter.normalize({"title": ""}) is None
         assert adapter.normalize({"title": []}) is None
 
@@ -150,8 +156,14 @@ class TestCrossrefTitleNormalization:
 class TestArxivTitleNormalization:
     def test_string_and_list_titles(self):
         adapter = ArxivAdapter()
-        assert adapter.normalize({"title": "  Full Title String  "}).title == "Full Title String"
-        assert adapter.normalize({"title": ["  Full Title String  "]}).title == "Full Title String"
+        assert (
+            adapter.normalize({"title": "  Full Title String  "}).title
+            == "Full Title String"
+        )
+        assert (
+            adapter.normalize({"title": ["  Full Title String  "]}).title
+            == "Full Title String"
+        )
         assert adapter.normalize({"title": ""}) is None
         assert adapter.normalize({"title": []}) is None
 
