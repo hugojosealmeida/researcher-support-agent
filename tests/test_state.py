@@ -1,18 +1,14 @@
 """Tests for PipelineState serialization and helpers."""
 
-import json
-import pytest
 from pathlib import Path
 
 from research_pipeline.state import (
-    PipelineState,
-    SearchItem,
     Paper,
-    Summary,
+    PipelineState,
     ReviewComment,
+    SearchItem,
+    Summary,
     _serialize,
-    _deserialize,
-    _as_dataclass,
 )
 
 
@@ -127,9 +123,7 @@ class TestPipelineStateSaveLoad:
 
 class TestSerializationHelpers:
     def test_serialize_dataclass(self) -> None:
-        item = SearchItem(
-            title="T", authors=["A"], year=2023, venue="V", doi="1"
-        )
+        item = SearchItem(title="T", authors=["A"], year=2023, venue="V", doi="1")
         result = _serialize(item)
         assert isinstance(result, dict)
         assert result["title"] == "T"

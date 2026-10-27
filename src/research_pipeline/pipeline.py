@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import ClassVar
 
 from research_pipeline.agent_base import PipelineAgent
 from research_pipeline.state import PipelineState
-
-if TYPE_CHECKING:
-    pass  # no extra imports needed
 
 
 class Pipeline:
@@ -22,7 +19,7 @@ class Pipeline:
         Path to the JSON state file.  If ``None`` state is ephemeral.
     """
 
-    VALID_PHASES: list[str] = [
+    VALID_PHASES: ClassVar[list[str]] = [
         "planning",
         "literature_search",
         "paper_ingestion",
@@ -54,9 +51,7 @@ class Pipeline:
 
     # ---- execution ---- #
 
-    def run_phase(
-        self, phase_name: str, state: PipelineState | None = None
-    ) -> PipelineState:
+    def run_phase(self, phase_name: str, state: PipelineState | None = None) -> PipelineState:
         """Run a single named phase.
 
         Parameters
@@ -73,10 +68,7 @@ class Pipeline:
             The updated state after the phase completes.
         """
         if phase_name not in self.VALID_PHASES:
-            raise ValueError(
-                f"Unknown phase '{phase_name}'. "
-                f"Valid phases: {self.VALID_PHASES}"
-            )
+            raise ValueError(f"Unknown phase '{phase_name}'. Valid phases: {self.VALID_PHASES}")
 
         if state is not None:
             self._state = state
@@ -120,10 +112,7 @@ class Pipeline:
             self._state = state
 
         if phase_name not in self.VALID_PHASES:
-            raise ValueError(
-                f"Unknown phase '{phase_name}'. "
-                f"Valid phases: {self.VALID_PHASES}"
-            )
+            raise ValueError(f"Unknown phase '{phase_name}'. Valid phases: {self.VALID_PHASES}")
 
         start_idx = self.VALID_PHASES.index(phase_name)
         for phase_name in self.VALID_PHASES[start_idx:]:

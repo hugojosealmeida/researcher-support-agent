@@ -1,31 +1,28 @@
 """Tests for the Pipeline orchestrator."""
 
-import pytest
 from pathlib import Path
 
+import pytest
+
+from research_pipeline.agents import (
+    AcademicReviewerAgent,
+    LiteratureSearchAgent,
+    LiteratureSynthesisAgent,
+    PaperIngestionAgent,
+    PaperSummarizationAgent,
+    PlanningAgent,
+    ReviewPaperWriterAgent,
+    RevisionReleaseAgent,
+)
 from research_pipeline.pipeline import Pipeline
 from research_pipeline.state import (
     PipelineState,
-    SearchItem,
-    Paper,
-    Summary,
-    ReviewComment,
 )
-from research_pipeline.agents import (
-    PlanningAgent,
-    LiteratureSearchAgent,
-    PaperIngestionAgent,
-    PaperSummarizationAgent,
-    LiteratureSynthesisAgent,
-    ReviewPaperWriterAgent,
-    AcademicReviewerAgent,
-    RevisionReleaseAgent,
-)
-
 
 # ------------------------------------------------------------------ #
 #  Helpers — lightweight agents that just set state for testing        #
 # ------------------------------------------------------------------ #
+
 
 class _DummyAgent:
     """Minimal agent that writes to state for testing."""
@@ -43,6 +40,7 @@ class _DummyAgent:
 # ------------------------------------------------------------------ #
 #  Tests                                                               #
 # ------------------------------------------------------------------ #
+
 
 class TestPipelineRegistration:
     def test_register_and_run_phase(self, tmp_path: Path) -> None:
@@ -81,13 +79,13 @@ class TestPipelineFullWorkflow:
         return p, tmp_path
 
     def test_run_full_executes_all_phases(self) -> None:
-        p, tmp_path = self._build_pipeline()
+        p, _tmp_path = self._build_pipeline()
         result = p.run_full()
         assert result.topic == "Gene Therapy"
         assert result.completed_phases == Pipeline.VALID_PHASES
 
     def test_run_from_executes_subset(self) -> None:
-        p, tmp_path = self._build_pipeline()
+        p, _tmp_path = self._build_pipeline()
 
         # First run planning only
         p.run_phase("planning")
@@ -102,10 +100,10 @@ class TestPipelineFullWorkflow:
             "academic_review",
             "revision_release",
         ]
-        assert result.completed_phases == ["planning"] + remaining
+        assert result.completed_phases == ["planning", *remaining]
 
     def test_run_full_overrides_external_state(self) -> None:
-        p, tmp_path = self._build_pipeline()
+        p, _tmp_path = self._build_pipeline()
         ext = PipelineState()
         ext.topic = "External"
         ext.completed_phases = ["planning"]

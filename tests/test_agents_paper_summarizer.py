@@ -1,13 +1,5 @@
 """Tests for the paper summarizer agent."""
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-import pytest
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
-
 from researcher_support_agent.agents.paper_summarizer import (
     PaperSummaryConfig,
     summarize_paper,
@@ -29,13 +21,6 @@ class TestSummarizePaper:
         assert note.paper_id == "Test_Paper"
         assert note.title == "Test Paper"
         assert note.year == 2023
-<<<<<<< HEAD
-<<<<<<< HEAD
-        assert note.methodology != "Unknown"  # should have abstract-based content
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 
     def test_distinguishes_author_reported_from_agent(self):
         paper = Paper(
@@ -57,13 +42,6 @@ class TestSummarizePaper:
         )
         note = summarize_paper(paper)
         assert note.methodology == "Unknown" or len(note.methodology) > 0
-<<<<<<< HEAD
-<<<<<<< HEAD
-        assert note.data_and_sample == "Information not available in abstract"
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 
     def test_with_raw_text(self):
         paper = Paper(

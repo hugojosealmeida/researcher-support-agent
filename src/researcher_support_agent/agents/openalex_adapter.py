@@ -1,20 +1,35 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 """OpenAlex adapter for scholarly works."""
 
 from __future__ import annotations
 
-from typing import Any
+import contextlib
+import os
+from typing import Any, cast
 
 from ..models.paper import Author, Paper
 from ..models.query import SearchQuery
+from ..reliability import RateLimiter, RetryableError, RetryPolicy
 from .paper_search import SourceAdapter
 
 BASE_URL = "https://api.openalex.org"
 
 
 class OpenAlexAdapter(SourceAdapter):
+    """Adapter for the OpenAlex API.
+
+    Includes rate limiting and retry policies (Phase E reliability) while
+    preserving fixture-backed search/normalise behaviour.
+    """
+
     source_name = "openalex"
+
+    def __init__(self, rate_limiter: RateLimiter | None = None) -> None:
+        self.rate_limiter = rate_limiter
+        self.retry_policy = RetryPolicy(
+            max_retries=3,
+            base_delay=1.0,
+            retryable_exceptions=(RetryableError,),
+        )
 
     def _build_url(self, query: SearchQuery) -> str:
         params: dict[str, str] = {
@@ -34,8 +49,7 @@ class OpenAlexAdapter(SourceAdapter):
         return f"{BASE_URL}/works?{urlencode(params)}"
 
     def _parse_paper(self, record: dict[str, Any]) -> Paper | None:
-        title = record.get("title", None)
-        # Handle both string and list title formats (Crossref uses lists)
+        title = record.get("title")
         if isinstance(title, list):
             title = title[0] if title else None
         if not title or not isinstance(title, str):
@@ -45,14 +59,13 @@ class OpenAlexAdapter(SourceAdapter):
         authors: list[Author] = []
         author_display_names = record.get("authorships", [])
         if not author_display_names:
-            # Crossref format uses "author" key instead
             for author in record.get("author", [])[:20]:
                 given = author.get("given", "")
                 family = author.get("family", "")
                 name = f"{given} {family}".strip() or "Unknown"
                 authors.append(Author(full_name=name, orcid=author.get("ORCID")))
         else:
-            for authorship in author_display_names[:20]:  # cap at 20
+            for authorship in author_display_names[:20]:
                 author = authorship.get("author", {})
                 aff = (
                     author.get("affiliations", [{}])[0].get("institution", {})
@@ -67,17 +80,15 @@ class OpenAlexAdapter(SourceAdapter):
                     )
                 )
 
-        doi = record.get("doi", None)
+        doi = record.get("doi")
         if doi and isinstance(doi, str):
             doi = doi.replace("https://doi.org/", "")
 
-        publication_date = record.get("publication_date", None)
+        publication_date = record.get("publication_date")
         year: int | None = None
         if publication_date:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 year = int(publication_date[:4])
-            except (ValueError, TypeError):
-                pass
 
         venue = None
         primary_location = record.get("primary_location", {}) or {}
@@ -85,8 +96,7 @@ class OpenAlexAdapter(SourceAdapter):
         if source_info:
             venue = source_info.get("display_name")
 
-        # OpenAlex abstract_inverted_index is a dict; convert to string
-        abstract_raw = record.get("abstract_inverted_index", None)
+        abstract_raw = record.get("abstract_inverted_index")
         abstract: str | None = None
         if isinstance(abstract_raw, dict):
             try:
@@ -110,61 +120,47 @@ class OpenAlexAdapter(SourceAdapter):
 
     def search(self, query: SearchQuery) -> list[dict[str, Any]]:
         """Execute search against OpenAlex API."""
-        import os
+        if self.rate_limiter:
+            self.rate_limiter.acquire()
 
-        fixture = os.environ.get("OPENALEX_FIXTURE")
-        if fixture:
+        def _do_search() -> list[dict[str, Any]]:
+            fixture = os.environ.get("OPENALEX_FIXTURE")
+            if fixture:
+                try:
+                    import json
+
+                    with open(fixture) as f:
+                        data = json.load(f)
+                    start = (query.page - 1) * query.page_size
+                    end = start + query.page_size
+                    return cast(list[dict[str, Any]], data.get("results", [])[start:end])
+                except FileNotFoundError:
+                    pass
+
             try:
-                import json
+                import requests
 
-                with open(fixture) as f:
-                    data = json.load(f)
-                start = (query.page - 1) * query.page_size
-                end = start + query.page_size
-                return data.get("results", [])[start:end]
-            except FileNotFoundError:
-                pass
+                url = self._build_url(query)
+                resp = requests.get(url, timeout=30)
+                resp.raise_for_status()
+                data = resp.json()
+                query.results_count = data.get("count", 0)
+                return cast(list[dict[str, Any]], data.get("results", []))
+            except ImportError:
+                return []
 
-        # Production: fetch from API
-        try:
-            import requests
-
-            url = self._build_url(query)
-            resp = requests.get(url, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
-            query.results_count = data.get("count", 0)
-            return data.get("results", [])
-        except ImportError:
-            # requests not installed — return empty (tests mock this)
-            return []
+        return self.retry_policy.execute(_do_search)
 
     def normalize(self, raw: dict[str, Any]) -> Paper | None:
         if isinstance(raw, dict):
             return self._parse_paper(raw)
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
-"""OpenAlex adapter for paper search."""
-
-from __future__ import annotations
-
-from ..models.paper import Paper
-
-
-class OpenAlexAdapter:
-    """Adapter for the OpenAlex API."""
-
-    BASE_URL = "https://api.openalex.org/works"
-
-    def search(self, query: str, max_results: int = 10) -> list[Paper]:
-        """Search OpenAlex for papers matching a query."""
-        return []
+        return None
 
     def get_paper(self, oa_id: str) -> Paper | None:
-        """Retrieve a specific paper by OpenAlex ID."""
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
-        return None
+        if self.rate_limiter:
+            self.rate_limiter.acquire()
+
+        def _do_get() -> Paper | None:
+            return None
+
+        return self.retry_policy.execute(_do_get)

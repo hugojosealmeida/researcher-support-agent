@@ -45,6 +45,7 @@ class TestLiteratureSynthesisAgent:
     @pytest.fixture()
     def sample_notes(self):
         from datetime import datetime
+
         return [
             ResearchNote(
                 paper_id="Paper_A",

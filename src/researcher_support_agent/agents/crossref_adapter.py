@@ -1,20 +1,34 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 """Crossref adapter for DOI and bibliographic metadata."""
 
 from __future__ import annotations
 
-from typing import Any
+import os
+from typing import Any, cast
 
 from ..models.paper import Author, Paper
 from ..models.query import SearchQuery
+from ..reliability import RateLimiter, RetryableError, RetryPolicy
 from .paper_search import SourceAdapter
 
 BASE_URL = "https://api.crossref.org/works"
 
 
 class CrossrefAdapter(SourceAdapter):
+    """Adapter for the Crossref API.
+
+    Includes rate limiting and retry policies (Phase E reliability) while
+    preserving fixture-backed search/normalise behaviour.
+    """
+
     source_name = "crossref"
+
+    def __init__(self, rate_limiter: RateLimiter | None = None) -> None:
+        self.rate_limiter = rate_limiter
+        self.retry_policy = RetryPolicy(
+            max_retries=3,
+            base_delay=1.0,
+            retryable_exceptions=(RetryableError,),
+        )
 
     def _build_url(self, query: SearchQuery) -> str:
         from urllib.parse import urlencode
@@ -50,7 +64,7 @@ class CrossrefAdapter(SourceAdapter):
                 )
             )
 
-        doi = record.get("DOI", None)
+        doi = record.get("DOI")
         published_print = record.get("published-print", {}) or record.get("published", {})
         year: int | None = None
         if published_print:
@@ -61,7 +75,7 @@ class CrossrefAdapter(SourceAdapter):
         container = record.get("container-title", [])
         venue = container[0] if container else None
 
-        abstract = record.get("abstract", None)
+        abstract = record.get("abstract")
 
         return Paper(
             title=title,
@@ -79,98 +93,50 @@ class CrossrefAdapter(SourceAdapter):
 
     def search(self, query: SearchQuery) -> list[dict[str, Any]]:
         """Execute search against Crossref API."""
-        import os
+        if self.rate_limiter:
+            self.rate_limiter.acquire()
 
-        url = self._build_url(query)
+        def _do_search() -> list[dict[str, Any]]:
+            url = self._build_url(query)
 
-        fixture = os.environ.get("CROSSREF_FIXTURE")
-        if fixture:
+            fixture = os.environ.get("CROSSREF_FIXTURE")
+            if fixture:
+                try:
+                    import json
+
+                    with open(fixture) as f:
+                        data = json.load(f)
+                    items = data.get("message", {}).get("items", [])
+                    start = (query.page - 1) * query.page_size
+                    end = start + query.page_size
+                    return cast(list[dict[str, Any]], items[start:end])
+                except FileNotFoundError:
+                    pass
+
             try:
-                import json
+                import requests
 
-                with open(fixture) as f:
-                    data = json.load(f)
-                items = data.get("message", {}).get("items", [])
-                start = (query.page - 1) * query.page_size
-                end = start + query.page_size
-                return items[start:end]
-            except FileNotFoundError:
-                pass
+                resp = requests.get(url, timeout=30)
+                resp.raise_for_status()
+                data = resp.json()
+                message = data.get("message", {})
+                query.results_count = message.get("total-results", 0)
+                return cast(list[dict[str, Any]], message.get("items", []))
+            except ImportError:
+                return []
 
-        try:
-            import requests
-
-            resp = requests.get(url, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
-            message = data.get("message", {})
-            query.results_count = message.get("total-results", 0)
-            return message.get("items", [])
-        except ImportError:
-            return []
+        return self.retry_policy.execute(_do_search)
 
     def normalize(self, raw: dict[str, Any]) -> Paper | None:
         if isinstance(raw, dict):
             return self._parse_paper(raw)
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
-"""Crossref adapter for paper search."""
-
-from __future__ import annotations
-
-from ..models.paper import Paper
-<<<<<<< HEAD
-
-
-class CrossrefAdapter:
-    """Adapter for the Crossref API."""
-
-    BASE_URL = "https://api.crossref.org/works"
-
-    def search(self, query: str, max_results: int = 10) -> list[Paper]:
-        """Search Crossref for papers matching a query."""
-        return []
+        return None
 
     def get_paper(self, doi: str) -> Paper | None:
-        """Retrieve a specific paper by DOI."""
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-        return None
-=======
-from ..reliability import RateLimiter, RetryPolicy, RetryableError
-
-
-class CrossrefAdapter:
-    """Adapter for the Crossref API.
-
-    Includes rate limiting and retry policies (Phase E reliability).
-    """
-
-    BASE_URL = "https://api.crossref.org/works"
-
-    def __init__(self, rate_limiter: RateLimiter | None = None) -> None:
-        self.rate_limiter = rate_limiter
-        self.retry_policy = RetryPolicy(
-            max_retries=3,
-            base_delay=1.0,
-            retryable_exceptions=(RetryableError,),
-        )
-
-    def search(self, query: str, max_results: int = 10) -> list[Paper]:
-        """Search Crossref for papers matching a query."""
         if self.rate_limiter:
             self.rate_limiter.acquire()
-
-        def _do_search() -> list[Paper]:
-            return []
-
-        return self.retry_policy.execute(_do_search)
-
-    def get_paper(self, doi: str) -> Paper | None:
-        """Retrieve a specific paper by DOI."""
 
         def _do_get() -> Paper | None:
             return None
 
         return self.retry_policy.execute(_do_get)
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))

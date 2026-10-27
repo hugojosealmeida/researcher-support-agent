@@ -53,15 +53,9 @@ class RevisionLoopResult(BaseModel):
 
     final_manuscript: Manuscript = Field(..., description="The final manuscript after revisions")
     iterations: int = Field(default=0, description="Number of revision cycles performed")
-    review_history: list[ReviewReport] = Field(
-        default_factory=list, description="All review reports across iterations"
-    )
-    revision_log: list[RevisionRecord] = Field(
-        default_factory=list, description="Chronological revision actions"
-    )
-    version_history: list[ManuscriptVersion] = Field(
-        default_factory=list, description="Manuscript versions over time"
-    )
+    review_history: list[ReviewReport] = Field(default_factory=list, description="All review reports across iterations")
+    revision_log: list[RevisionRecord] = Field(default_factory=list, description="Chronological revision actions")
+    version_history: list[ManuscriptVersion] = Field(default_factory=list, description="Manuscript versions over time")
     resolved_count: int = Field(default=0)
     unresolved_count: int = Field(default=0)
     completed_at: datetime = Field(default_factory=now_utc)
@@ -122,9 +116,7 @@ class RevisionAgent:
                 break
 
             # Perform revisions
-            current_manuscript = self._apply_revisions(
-                current_manuscript, unresolved, iteration
-            )
+            current_manuscript = self._apply_revisions(current_manuscript, unresolved, iteration)
             current_manuscript.bump_version()
 
             # Record the version
@@ -168,7 +160,7 @@ class RevisionAgent:
                 section.content += f"\n\n[Revision note {iteration}: {finding.title}]"
 
             # Record the revision
-            record = RevisionRecord(
+            RevisionRecord(
                 iteration=iteration,
                 reviewer_finding_id=finding.id,
                 finding_title=finding.title,

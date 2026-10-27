@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 """Tests for the paper search agent and adapters."""
 
 import os
@@ -10,9 +8,11 @@ from researcher_support_agent.agents.europe_pmc_adapter import EuropePMCAdapter
 from researcher_support_agent.agents.openalex_adapter import OpenAlexAdapter
 from researcher_support_agent.agents.paper_search import (
     PaperSearchAgent,
+    PaperSearchResult,
     deduplicate_papers,
 )
-from researcher_support_agent.models.paper import Author, Paper
+from researcher_support_agent.models.paper import Paper
+from researcher_support_agent.models.query import SearchQuery
 
 
 class TestDeduplication:
@@ -155,7 +155,6 @@ class TestPaperSearchAgent:
             os.environ.pop("CROSSREF_FIXTURE", None)
 
     def test_deduplication_across_sources(self, openalex_fixture, crossref_fixture):
-        """Papers with the same DOI from different sources should be deduplicated."""
         os.environ["OPENALEX_FIXTURE"] = str(openalex_fixture)
         os.environ["CROSSREF_FIXTURE"] = str(crossref_fixture)
         try:
@@ -166,21 +165,10 @@ class TestPaperSearchAgent:
             )
             papers = agent.search("test query")
             dois = [p.doi for p in papers if p.doi]
-            assert len(dois) == len(set(dois))  # no duplicates
+            assert len(dois) == len(set(dois))
         finally:
             os.environ.pop("OPENALEX_FIXTURE", None)
             os.environ.pop("CROSSREF_FIXTURE", None)
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
-"""Tests for the paper search agent."""
-
-
-from researcher_support_agent.agents.paper_search import (
-    PaperSearchAgent,
-    PaperSearchResult,
-)
-from researcher_support_agent.models.query import SearchQuery
 
 
 class TestPaperSearchResult:
@@ -190,7 +178,7 @@ class TestPaperSearchResult:
         assert r.total_results == 0
 
 
-class TestPaperSearchAgent:
+class TestPaperSearchAgentBasic:
     def test_search(self):
         agent = PaperSearchAgent()
         query = SearchQuery(terms=["deep learning"], databases=["PubMed"])
@@ -209,7 +197,3 @@ class TestPaperSearchAgent:
         assert len(results) == 2
         for r in results:
             assert isinstance(r, PaperSearchResult)
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))

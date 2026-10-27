@@ -13,19 +13,9 @@ from __future__ import annotations
 
 import json
 import sqlite3
-<<<<<<< HEAD
-<<<<<<< HEAD
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-=======
 from datetime import UTC, datetime
 from pathlib import Path
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-from datetime import UTC, datetime
-from pathlib import Path
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -33,18 +23,8 @@ from ..models.evidence import (
     CitationRecord,
     ClaimType,
     Evidence,
-<<<<<<< HEAD
-<<<<<<< HEAD
-    ExtractedClaim,
-    EvidencePointer,
-=======
     EvidencePointer,
     ExtractedClaim,
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-    EvidencePointer,
-    ExtractedClaim,
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
     ResearchNote,
     ReviewFinding,
 )
@@ -71,35 +51,23 @@ class EvidenceRepository:
     - review_findings: quality/bias review findings
     """
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    def __init__(self, db_path: str, artifacts_dir: Optional[str] = None) -> None:
-        self.db_path = db_path
-        self.artifacts_dir = artifacts_dir
-        self._conn: Optional[sqlite3.Connection] = None
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
     def __init__(self, db_path: str, artifacts_dir: str | None = None) -> None:
         self.db_path = db_path
         self.artifacts_dir = artifacts_dir
-        self._conn: sqlite3.Connection | None = None
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
-        self._connect()
+        self._conn: sqlite3.Connection = self._connect()
         self._ensure_schema()
 
     # ------------------------------------------------------------------
     # Connection helpers
     # ------------------------------------------------------------------
 
-    def _connect(self) -> None:
-        self._conn = sqlite3.connect(self.db_path)
-        self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.execute("PRAGMA foreign_keys=ON")
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+        self._conn = conn
+        return conn
 
     def _ensure_schema(self) -> None:
         """Create tables if they do not exist."""
@@ -207,7 +175,7 @@ class EvidenceRepository:
     # Paper operations
     # ------------------------------------------------------------------
 
-    def store_paper(self, paper_data: dict) -> None:
+    def store_paper(self, paper_data: dict[str, Any]) -> None:
         """Store or update a paper's metadata."""
         self._conn.execute(
             """
@@ -229,35 +197,15 @@ class EvidenceRepository:
                 paper_data.get("source_id"),
                 paper_data.get("url"),
                 json.dumps(paper_data.get("metadata", {})),
-<<<<<<< HEAD
-<<<<<<< HEAD
-                paper_data.get("retrieved_at") or datetime.now(timezone.utc).isoformat(),
-                datetime.now(timezone.utc).isoformat(),
-=======
                 paper_data.get("retrieved_at") or datetime.now(UTC).isoformat(),
                 datetime.now(UTC).isoformat(),
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-                paper_data.get("retrieved_at") or datetime.now(UTC).isoformat(),
-                datetime.now(UTC).isoformat(),
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
             ),
         )
         self._conn.commit()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    def get_paper(self, paper_id: str) -> Optional[dict]:
-=======
-    def get_paper(self, paper_id: str) -> dict | None:
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-    def get_paper(self, paper_id: str) -> dict | None:
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
+    def get_paper(self, paper_id: str) -> dict[str, Any] | None:
         """Retrieve a paper by ID."""
-        row = self._conn.execute(
-            "SELECT * FROM papers WHERE id = ?", (paper_id,)
-        ).fetchone()
+        row = self._conn.execute("SELECT * FROM papers WHERE id = ?", (paper_id,)).fetchone()
         if row is None:
             return None
         d = dict(row)
@@ -265,7 +213,7 @@ class EvidenceRepository:
         d["metadata"] = json.loads(d["metadata"]) if d.get("metadata") else {}
         return d
 
-    def list_papers(self) -> list[dict]:
+    def list_papers(self) -> list[dict[str, Any]]:
         """List all stored papers."""
         rows = self._conn.execute("SELECT * FROM papers ORDER BY created_at DESC").fetchall()
         papers = []
@@ -317,15 +265,7 @@ class EvidenceRepository:
 
         self._conn.commit()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    def get_research_note(self, paper_id: str) -> Optional[ResearchNote]:
-=======
     def get_research_note(self, paper_id: str) -> ResearchNote | None:
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-    def get_research_note(self, paper_id: str) -> ResearchNote | None:
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
         """Retrieve a research note by paper ID."""
         row = self._conn.execute(
             """
@@ -376,15 +316,7 @@ class EvidenceRepository:
                 claim.claim_type.value if hasattr(claim.claim_type, "value") else str(claim.claim_type),
                 claim.paper_id,
                 claim.confidence,
-<<<<<<< HEAD
-<<<<<<< HEAD
-                datetime.now(timezone.utc).isoformat(),
-=======
                 datetime.now(UTC).isoformat(),
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-                datetime.now(UTC).isoformat(),
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
             ),
         )
         for ev in claim.supporting_evidence:
@@ -465,24 +397,14 @@ class EvidenceRepository:
                 json.dumps(evidence.supporting_paper_ids),
                 evidence.strength,
                 evidence.confidence,
-<<<<<<< HEAD
-<<<<<<< HEAD
-                datetime.now(timezone.utc).isoformat(),
-=======
                 datetime.now(UTC).isoformat(),
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-                datetime.now(UTC).isoformat(),
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
             ),
         )
         self._conn.commit()
 
     def get_evidence_for_claim(self, claim: str) -> list[Evidence]:
         """Retrieve all evidence records for a given claim."""
-        rows = self._conn.execute(
-            "SELECT * FROM evidence WHERE claim = ?", (claim,)
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM evidence WHERE claim = ?", (claim,)).fetchall()
         result = []
         for row in rows:
             d = dict(row)
@@ -510,35 +432,27 @@ class EvidenceRepository:
                 pointer.table,
                 pointer.figure,
                 pointer.description,
-<<<<<<< HEAD
-<<<<<<< HEAD
-                datetime.now(timezone.utc).isoformat(),
-=======
                 datetime.now(UTC).isoformat(),
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-                datetime.now(UTC).isoformat(),
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
             ),
         )
         self._conn.commit()
 
     def get_evidence_pointers(self, paper_id: str) -> list[EvidencePointer]:
         """Retrieve all evidence pointers for a paper."""
-        rows = self._conn.execute(
-            "SELECT * FROM evidence_pointers WHERE paper_id = ?", (paper_id,)
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM evidence_pointers WHERE paper_id = ?", (paper_id,)).fetchall()
         result = []
         for row in rows:
             d = dict(row)
-            result.append(EvidencePointer(
-                paper_id=d["paper_id"],
-                section=d.get("section"),
-                page=d.get("page"),
-                table=d.get("table_ref"),
-                figure=d.get("figure_ref"),
-                description=d["description"],
-            ))
+            result.append(
+                EvidencePointer(
+                    paper_id=d["paper_id"],
+                    section=d.get("section"),
+                    page=d.get("page"),
+                    table=d.get("table_ref"),
+                    figure=d.get("figure_ref"),
+                    description=d["description"],
+                )
+            )
         return result
 
     # ------------------------------------------------------------------
@@ -563,9 +477,7 @@ class EvidenceRepository:
 
     def get_citations_from(self, paper_id: str) -> list[CitationRecord]:
         """Get all papers cited by a given paper."""
-        rows = self._conn.execute(
-            "SELECT * FROM citations WHERE citing_paper_id = ?", (paper_id,)
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM citations WHERE citing_paper_id = ?", (paper_id,)).fetchall()
         return [
             CitationRecord(
                 citing_paper_id=row["citing_paper_id"],
@@ -577,9 +489,7 @@ class EvidenceRepository:
 
     def get_citations_to(self, paper_id: str) -> list[CitationRecord]:
         """Get all papers that cite a given paper."""
-        rows = self._conn.execute(
-            "SELECT * FROM citations WHERE cited_paper_id = ?", (paper_id,)
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM citations WHERE cited_paper_id = ?", (paper_id,)).fetchall()
         return [
             CitationRecord(
                 citing_paper_id=row["citing_paper_id"],
@@ -596,6 +506,7 @@ class EvidenceRepository:
     def store_review_finding(self, finding: ReviewFinding) -> None:
         """Store a review finding."""
         import uuid
+
         self._conn.execute(
             """
             INSERT INTO review_findings (id, category, severity, description, resolution, paper_id, created_at)
@@ -608,24 +519,14 @@ class EvidenceRepository:
                 finding.description,
                 finding.resolution,
                 finding.paper_id,
-<<<<<<< HEAD
-<<<<<<< HEAD
-                datetime.now(timezone.utc).isoformat(),
-=======
                 datetime.now(UTC).isoformat(),
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-                datetime.now(UTC).isoformat(),
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
             ),
         )
         self._conn.commit()
 
     def get_review_findings(self, paper_id: str) -> list[ReviewFinding]:
         """Get review findings for a paper."""
-        rows = self._conn.execute(
-            "SELECT * FROM review_findings WHERE paper_id = ?", (paper_id,)
-        ).fetchall()
+        rows = self._conn.execute("SELECT * FROM review_findings WHERE paper_id = ?", (paper_id,)).fetchall()
         return [
             ReviewFinding(
                 category=row["category"],
@@ -645,10 +546,9 @@ class EvidenceRepository:
         """Close the database connection."""
         if self._conn:
             self._conn.close()
-            self._conn = None
 
-    def __enter__(self):
+    def __enter__(self) -> EvidenceRepository:
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: object) -> None:
         self.close()

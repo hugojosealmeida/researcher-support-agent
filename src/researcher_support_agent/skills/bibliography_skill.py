@@ -10,6 +10,8 @@ Acceptance criteria:
 
 from __future__ import annotations
 
+from typing import Any
+
 from ..models.citation import (
     Bibliography,
     DOIResolutionResult,
@@ -35,7 +37,7 @@ class BibliographySkill:
         doi: str | None = None,
         pmid: str | None = None,
         arxiv_id: str | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ReferenceRecord:
         """Add a reference record to the bibliography.
 
@@ -68,7 +70,7 @@ class BibliographySkill:
         """Export the bibliography in a named format."""
         return self.bibliography.to_format(fmt)
 
-    def export_csl_json(self) -> list[dict]:
+    def export_csl_json(self) -> list[dict[str, Any]]:
         """Export the bibliography as CSL-JSON."""
         return self.bibliography.to_csl_json()
 

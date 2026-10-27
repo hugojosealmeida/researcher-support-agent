@@ -1,20 +1,35 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 """Europe PMC adapter for biomedical literature."""
 
 from __future__ import annotations
 
-from typing import Any
+import contextlib
+import os
+from typing import Any, cast
 
 from ..models.paper import Author, Paper
 from ..models.query import SearchQuery
+from ..reliability import RateLimiter, RetryableError, RetryPolicy
 from .paper_search import SourceAdapter
 
 BASE_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest"
 
 
 class EuropePMCAdapter(SourceAdapter):
+    """Adapter for the Europe PMC API.
+
+    Includes rate limiting and retry policies (Phase E reliability) while
+    preserving fixture-backed search/normalise behaviour.
+    """
+
     source_name = "europe_pmc"
+
+    def __init__(self, rate_limiter: RateLimiter | None = None) -> None:
+        self.rate_limiter = rate_limiter
+        self.retry_policy = RetryPolicy(
+            max_retries=3,
+            base_delay=1.0,
+            retryable_exceptions=(RetryableError,),
+        )
 
     def _build_url(self, query: SearchQuery) -> str:
         from urllib.parse import urlencode
@@ -45,20 +60,18 @@ class EuropePMCAdapter(SourceAdapter):
             full = f"{author.get('forename', '')} {author.get('surname', '')}".strip()
             authors.append(Author(full_name=full or "Unknown"))
 
-        pmid = record.get("pmid", None)
-        pmcid = record.get("pmcid", None)
-        doi = record.get("doi", None)
+        pmid = record.get("pmid")
+        pmcid = record.get("pmcid")
+        doi = record.get("doi")
 
-        pub_date = record.get("publishDate", None)
+        pub_date = record.get("publishDate")
         year: int | None = None
         if pub_date:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 year = int(pub_date[:4])
-            except (ValueError, TypeError):
-                pass
 
-        journal_title = record.get("journalTitle", None)
-        abstract = record.get("abstractText", None)
+        journal_title = record.get("journalTitle")
+        abstract = record.get("abstractText")
         if abstract == "":
             abstract = None
 
@@ -79,97 +92,49 @@ class EuropePMCAdapter(SourceAdapter):
 
     def search(self, query: SearchQuery) -> list[dict[str, Any]]:
         """Execute search against Europe PMC API."""
-        import os
+        if self.rate_limiter:
+            self.rate_limiter.acquire()
 
-        url = self._build_url(query)
+        def _do_search() -> list[dict[str, Any]]:
+            url = self._build_url(query)
 
-        fixture = os.environ.get("EUROPEPMC_FIXTURE")
-        if fixture:
+            fixture = os.environ.get("EUROPEPMC_FIXTURE")
+            if fixture:
+                try:
+                    import json
+
+                    with open(fixture) as f:
+                        data = json.load(f)
+                    results = data.get("resultList", {}).get("result", [])
+                    start = (query.page - 1) * query.page_size
+                    end = start + query.page_size
+                    return cast(list[dict[str, Any]], results[start:end])
+                except FileNotFoundError:
+                    pass
+
             try:
-                import json
+                import requests
 
-                with open(fixture) as f:
-                    data = json.load(f)
-                results = data.get("resultList", {}).get("result", [])
-                start = (query.page - 1) * query.page_size
-                end = start + query.page_size
-                return results[start:end]
-            except FileNotFoundError:
-                pass
+                resp = requests.get(url, timeout=30)
+                resp.raise_for_status()
+                data = resp.json()
+                query.results_count = int(data.get("resultCount", 0))
+                return cast(list[dict[str, Any]], data.get("resultList", {}).get("result", []))
+            except ImportError:
+                return []
 
-        try:
-            import requests
-
-            resp = requests.get(url, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
-            query.results_count = int(data.get("resultCount", 0))
-            return data.get("resultList", {}).get("result", [])
-        except ImportError:
-            return []
+        return self.retry_policy.execute(_do_search)
 
     def normalize(self, raw: dict[str, Any]) -> Paper | None:
         if isinstance(raw, dict):
             return self._parse_paper(raw)
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
-"""Europe PMC adapter for paper search."""
-
-from __future__ import annotations
-
-from ..models.paper import Paper
-<<<<<<< HEAD
-
-
-class EuropePMCAdapter:
-    """Adapter for the Europe PMC API."""
-
-    BASE_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
-
-    def search(self, query: str, max_results: int = 10) -> list[Paper]:
-        """Search Europe PMC for papers matching a query."""
-        return []
+        return None
 
     def get_paper(self, pmid: str) -> Paper | None:
-        """Retrieve a specific paper by PMID."""
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-        return None
-=======
-from ..reliability import RateLimiter, RetryPolicy, RetryableError
-
-
-class EuropePMCAdapter:
-    """Adapter for the Europe PMC API.
-
-    Includes rate limiting and retry policies (Phase E reliability).
-    """
-
-    BASE_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
-
-    def __init__(self, rate_limiter: RateLimiter | None = None) -> None:
-        self.rate_limiter = rate_limiter
-        self.retry_policy = RetryPolicy(
-            max_retries=3,
-            base_delay=1.0,
-            retryable_exceptions=(RetryableError,),
-        )
-
-    def search(self, query: str, max_results: int = 10) -> list[Paper]:
-        """Search Europe PMC for papers matching a query."""
         if self.rate_limiter:
             self.rate_limiter.acquire()
-
-        def _do_search() -> list[Paper]:
-            return []
-
-        return self.retry_policy.execute(_do_search)
-
-    def get_paper(self, pmid: str) -> Paper | None:
-        """Retrieve a specific paper by PMID."""
 
         def _do_get() -> Paper | None:
             return None
 
         return self.retry_policy.execute(_do_get)
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))

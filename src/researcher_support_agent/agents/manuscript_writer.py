@@ -91,7 +91,12 @@ class ManuscriptWriter:
         for section_name in manuscript.sections:
             section = manuscript.sections[section_name]
             content, cited, warning = self._write_section(
-                section_name, section.purpose, synthesis_notes, papers, reference_records, paper_lookup
+                section_name,
+                section.purpose,
+                synthesis_notes,
+                papers,
+                reference_records,
+                paper_lookup,
             )
             manuscript.set_section_content(section_name, content, citations=cited)
             citations_used[section_name] = cited
@@ -122,8 +127,6 @@ class ManuscriptWriter:
         paper_lookup: dict[str, Paper],
     ) -> tuple[str, list[str], list[str]]:
         """Write a single section. Returns (content, cited_paper_ids, warnings)."""
-        citations: list[str] = []
-        warnings_list: list[str] = []
 
         if name == "abstract":
             return self._write_abstract(notes, papers, bibliography)
@@ -160,7 +163,9 @@ class ManuscriptWriter:
             "multiple databases. Included studies were assessed for",
             "relevance and quality.",
             "",
-            "**Results:** " + (" ".join(key_findings[:3])) if key_findings else "Key findings are presented in the results section.",
+            "**Results:** " + (" ".join(key_findings[:3]))
+            if key_findings
+            else "Key findings are presented in the results section.",
             "",
             "**Conclusion:** The reviewed literature suggests",
             "important directions for future research.",
@@ -168,7 +173,10 @@ class ManuscriptWriter:
         return "\n".join(abstract_lines), sorted(cited), []
 
     def _write_introduction(
-        self, notes: list[ResearchNote], papers: list[Paper], bibliography: Bibliography,
+        self,
+        notes: list[ResearchNote],
+        papers: list[Paper],
+        bibliography: Bibliography,
         paper_lookup: dict[str, Paper],
     ) -> tuple[str, list[str], list[str]]:
         """Write the introduction section."""
@@ -228,7 +236,10 @@ class ManuscriptWriter:
         return "\n".join(methods_lines), sorted(cited), []
 
     def _write_results(
-        self, notes: list[ResearchNote], papers: list[Paper], bibliography: Bibliography,
+        self,
+        notes: list[ResearchNote],
+        papers: list[Paper],
+        bibliography: Bibliography,
         paper_lookup: dict[str, Paper],
     ) -> tuple[str, list[str], list[str]]:
         """Write the results section."""
@@ -255,7 +266,10 @@ class ManuscriptWriter:
         return "\n".join(result_lines), sorted(cited), []
 
     def _write_discussion(
-        self, notes: list[ResearchNote], papers: list[Paper], bibliography: Bibliography,
+        self,
+        notes: list[ResearchNote],
+        papers: list[Paper],
+        bibliography: Bibliography,
         paper_lookup: dict[str, Paper],
     ) -> tuple[str, list[str], list[str]]:
         """Write the discussion section."""

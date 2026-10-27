@@ -1,0 +1,13 @@
+"""Allow ``python -m researcher_support_agent``."""
+
+from __future__ import annotations
+
+from .main import app
+
+
+def main() -> None:
+    app()
+
+
+if __name__ == "__main__":
+    main()

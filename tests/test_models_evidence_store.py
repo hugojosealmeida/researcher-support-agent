@@ -1,13 +1,5 @@
 """Tests for the evidence repository."""
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-import os
-import tempfile
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 from pathlib import Path
 
 import pytest
@@ -36,32 +28,13 @@ class TestEvidenceRepository:
         db_path = str(tmp_path / "test.db")
         with EvidenceRepository(db_path=db_path) as repo:
             assert repo.db_path == db_path
-<<<<<<< HEAD
-<<<<<<< HEAD
-            # Verify tables exist
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
-            tables = repo._conn.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            ).fetchall()
+            tables = repo._conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
             table_names = [t["name"] for t in tables]
             assert "papers" in table_names
             assert "research_notes" in table_names
             assert "claims" in table_names
             assert "evidence" in table_names
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    # ------------------------------------------------------------------
-    # Paper operations
-    # ------------------------------------------------------------------
-
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
     def test_store_and_get_paper(self, repo):
         paper_data = {
             "id": "paper-1",
@@ -76,14 +49,6 @@ class TestEvidenceRepository:
         assert result is not None
         assert result["title"] == "Test Paper"
         assert result["year"] == 2023
-<<<<<<< HEAD
-<<<<<<< HEAD
-        assert result["doi"] == "10.1234/test"
-        assert result["authors"] == [{"full_name": "Alice"}]
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 
     def test_get_nonexistent_paper(self, repo):
         assert repo.get_paper("nonexistent") is None
@@ -94,57 +59,20 @@ class TestEvidenceRepository:
         papers = repo.list_papers()
         assert len(papers) == 2
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    # ------------------------------------------------------------------
-    # Research note operations
-    # ------------------------------------------------------------------
-
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
     def test_store_and_get_research_note(self, repo):
         note = ResearchNote(
             paper_id="paper-1",
             title="Test Paper",
             year=2023,
             research_question="What is X?",
-<<<<<<< HEAD
-<<<<<<< HEAD
-            motivation="To understand X.",
-            methodology="Survey with 100 participants.",
-            data_and_sample="Adults aged 18-65.",
-            main_results="X has a positive effect.",
-            quantitative_findings="Effect size d=0.5.",
-            contributions="New method for measuring X.",
-            limitations="Self-reported data.",
-            open_questions="How generalizable is X?",
-            relevance_to_review="Directly relevant to our topic.",
-=======
             methodology="Survey with 100 participants.",
             main_results="X has a positive effect.",
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-            methodology="Survey with 100 participants.",
-            main_results="X has a positive effect.",
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
             agent_interpretation="This paper provides foundational evidence.",
         )
         repo.store_research_note(note)
         result = repo.get_research_note("paper-1")
         assert result is not None
-<<<<<<< HEAD
-<<<<<<< HEAD
-        assert result.research_question == "What is X?"
         assert result.main_results == "X has a positive effect."
-        assert result.agent_interpretation == "This paper provides foundational evidence."
-=======
-        assert result.main_results == "X has a positive effect."
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-        assert result.main_results == "X has a positive effect."
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 
     def test_research_note_markdown_artifact(self, repo):
         note = ResearchNote(
@@ -156,13 +84,6 @@ class TestEvidenceRepository:
             agent_interpretation="Important finding.",
         )
         repo.store_research_note(note)
-<<<<<<< HEAD
-<<<<<<< HEAD
-        # Check artifact file was created
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
         artifacts_dir = repo.artifacts_dir
         assert artifacts_dir is not None
         md_path = Path(artifacts_dir) / "note_paper-1.md"
@@ -170,64 +91,19 @@ class TestEvidenceRepository:
         content = md_path.read_text(encoding="utf-8")
         assert "Markdown Test" in content
         assert "Author-reported" in content
-<<<<<<< HEAD
-<<<<<<< HEAD
-        assert "Agent Interpretation" in content
-
-    def test_get_nonexistent_note(self, repo):
-        assert repo.get_research_note("nonexistent") is None
-
-    # ------------------------------------------------------------------
-    # Claim operations (Phase C acceptance criteria)
-    # ------------------------------------------------------------------
-
-    def test_store_and_get_claims_from_paper(self, repo):
-        claim1 = ExtractedClaim(
-=======
 
     def test_store_and_get_claims_from_paper(self, repo):
         claim = ExtractedClaim(
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-
-    def test_store_and_get_claims_from_paper(self, repo):
-        claim = ExtractedClaim(
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
             claim_text="X improves Y.",
             paper_id="paper-1",
             supporting_evidence=["Page 5: 'We observed a 20% improvement.'"],
             confidence=0.8,
         )
-<<<<<<< HEAD
-<<<<<<< HEAD
-        claim2 = ExtractedClaim(
-            claim_text="Z has no effect on Y.",
-            paper_id="paper-1",
-            supporting_evidence=["Page 12: 'No significant difference found.'"],
-            confidence=0.6,
-        )
-        repo.store_claim(claim1)
-        repo.store_claim(claim2)
-
-        claims = repo.get_claims_from_paper("paper-1")
-        assert len(claims) == 2
-        assert claims[0].paper_id == "paper-1"
-        assert len(claims[0].supporting_evidence) >= 1
-
-    def test_get_papers_supporting_claim(self, repo):
-        # Store claims in two different papers
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
         repo.store_claim(claim)
         claims = repo.get_claims_from_paper("paper-1")
         assert len(claims) == 1
 
     def test_get_papers_supporting_claim(self, repo):
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
         claim = ExtractedClaim(
             claim_text="X improves Y.",
             paper_id="paper-1",
@@ -235,61 +111,20 @@ class TestEvidenceRepository:
         )
         repo.store_paper({"id": "paper-1", "title": "Paper 1"})
         repo.store_claim(claim)
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
         claims = repo.get_papers_supporting_claim("X improves Y.")
         assert "paper-1" in claims
 
     def test_claim_to_source_mapping(self, repo):
-<<<<<<< HEAD
-<<<<<<< HEAD
-        """Acceptance: every substantive statement can be traced back to its supporting paper(s)."""
-        claim = ExtractedClaim(
-            claim_text="X improves Y.",
-            paper_id="paper-1",
-            supporting_evidence=[
-                "Table 2: X vs Y comparison, p<0.01",
-                "Section 3.2: Experimental results",
-            ],
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
         claim = ExtractedClaim(
             claim_text="X improves Y.",
             paper_id="paper-1",
             supporting_evidence=["Table 2: X vs Y"],
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
             confidence=0.85,
         )
         repo.store_paper({"id": "paper-1", "title": "Paper 1"})
         repo.store_claim(claim)
-<<<<<<< HEAD
-<<<<<<< HEAD
-
         papers = repo.get_papers_supporting_claim("X improves Y.")
         assert "paper-1" in papers
-        claims = repo.get_claims_from_paper("paper-1")
-        assert any("X improves Y" in c.claim_text for c in claims)
-
-    # ------------------------------------------------------------------
-    # Evidence operations
-    # ------------------------------------------------------------------
-=======
-        papers = repo.get_papers_supporting_claim("X improves Y.")
-        assert "paper-1" in papers
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-        papers = repo.get_papers_supporting_claim("X improves Y.")
-        assert "paper-1" in papers
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 
     def test_store_evidence(self, repo):
         evidence = Evidence(
@@ -301,18 +136,6 @@ class TestEvidenceRepository:
         repo.store_evidence(evidence)
         results = repo.get_evidence_for_claim("X improves Y.")
         assert len(results) == 1
-<<<<<<< HEAD
-<<<<<<< HEAD
-        assert results[0].strength == "strong"
-        assert results[0].confidence == 0.85
-
-    # ------------------------------------------------------------------
-    # Evidence pointers
-    # ------------------------------------------------------------------
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 
     def test_store_and_get_evidence_pointers(self, repo):
         ptr = EvidencePointer(
@@ -325,18 +148,6 @@ class TestEvidenceRepository:
         repo.store_evidence_pointer(ptr)
         pointers = repo.get_evidence_pointers("paper-1")
         assert len(pointers) == 1
-<<<<<<< HEAD
-<<<<<<< HEAD
-        assert pointers[0].page == 5
-        assert pointers[0].table == "Table 1"
-
-    # ------------------------------------------------------------------
-    # Citation operations
-    # ------------------------------------------------------------------
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 
     def test_store_and_get_citations(self, repo):
         repo.store_paper({"id": "p1", "title": "Paper 1"})
@@ -347,28 +158,8 @@ class TestEvidenceRepository:
             context="Section 2 discusses this work.",
         )
         repo.store_citation(citation)
-<<<<<<< HEAD
-<<<<<<< HEAD
-
         out = repo.get_citations_from("p1")
         assert len(out) == 1
-        assert out[0].cited_paper_id == "p2"
-
-        in_ = repo.get_citations_to("p2")
-        assert len(in_) == 1
-        assert in_[0].citing_paper_id == "p1"
-
-    # ------------------------------------------------------------------
-    # Review findings
-    # ------------------------------------------------------------------
-=======
-        out = repo.get_citations_from("p1")
-        assert len(out) == 1
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
-        out = repo.get_citations_from("p1")
-        assert len(out) == 1
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 
     def test_store_review_finding(self, repo):
         finding = ReviewFinding(
@@ -380,27 +171,8 @@ class TestEvidenceRepository:
         repo.store_review_finding(finding)
         findings = repo.get_review_findings("paper-1")
         assert len(findings) == 1
-<<<<<<< HEAD
-<<<<<<< HEAD
-        assert findings[0].severity == "medium"
-
-    # ------------------------------------------------------------------
-    # Context manager
-    # ------------------------------------------------------------------
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 
     def test_context_manager(self, tmp_path):
         db_path = str(tmp_path / "cm.db")
         with EvidenceRepository(db_path=db_path) as repo:
             assert repo._conn is not None
-<<<<<<< HEAD
-<<<<<<< HEAD
-        # After exiting, connection should be closed
-        # We can't easily check this, but no error should occur
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))

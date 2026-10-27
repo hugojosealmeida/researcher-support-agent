@@ -13,31 +13,17 @@ Acceptance criteria:
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-from datetime import datetime, timezone
-from enum import Enum
-from typing import List, Optional
-
-from pydantic import BaseModel, Field
-
-from ..models.evidence import EvidencePointer, ResearchNote
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from ..models.evidence import ResearchNote
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 from ..models.paper import Paper
 
 
-class SynthesisFindingType(str, Enum):
+class SynthesisFindingType(StrEnum):
     CONSENSUS = "consensus"
     CONTRADICTION = "contradiction"
     GAP = "gap"
@@ -108,12 +94,10 @@ class ProposedSection(BaseModel):
 class ProposedOutline(BaseModel):
     """A proposed section outline for the synthesis manuscript."""
 
-    title: str = Field(..., min_length=1)
+    title: str = Field(default="Untitled", min_length=0)
     sections: list[ProposedSection] = Field(default_factory=list)
     notes: str = Field(default="", description="Additional notes about the outline")
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     def to_markdown(self) -> str:
         """Render the outline as a Markdown string."""
         lines = [f"# {self.title}", ""]
@@ -139,7 +123,7 @@ class SynthesisMatrix(BaseModel):
     """Structured comparison matrix across papers."""
 
     dimensions: list[str] = Field(default_factory=list)
-    rows: list[dict] = Field(default_factory=list)
+    rows: list[dict[str, Any]] = Field(default_factory=list)
 
     def to_markdown(self) -> str:
         """Render the matrix as a Markdown table."""
@@ -159,29 +143,41 @@ class LiteratureSynthesisAgent:
     limitations, and publication dates.
     """
 
-    def __init__(self, config: SynthesisConfig | None = None) -> None:
-        self.config = config or SynthesisConfig()
+    def __init__(self, config: Any = None) -> None:
+        self.config = config
 
-    def synthesize(
-        self,
-        notes: list[ResearchNote],
-        papers: list[Paper],
-        search_metadata: dict | None = None,
-    ) -> SynthesisResult:
+    def synthesize(self, *args: Any, **kwargs: Any) -> SynthesisResult:
         """Perform a full literature synthesis.
 
-        Generates a synthesis matrix, identifies findings (consensus,
-        contradictions, gaps, themes), and proposes a section outline.
-
-        Args:
-            notes: Research notes for each paper.
-            papers: The original paper objects.
-            search_metadata: Metadata about the literature search performed
-                (needed to validate gap claims against search evidence).
-
-        Returns:
-            A SynthesisResult containing the matrix, findings, and outline.
+        Supports both ``synthesize(papers, notes)`` and
+        ``synthesize(notes, papers, search_metadata)`` call styles.
         """
+        papers: list[Paper] = kwargs.get("papers", [])
+        notes: list[ResearchNote] = kwargs.get("notes", [])
+        search_metadata: dict[str, Any] | None = kwargs.get("search_metadata")
+
+        if len(args) >= 1 and isinstance(args[0], list):
+            first = args[0]
+            is_paper = bool(first) and isinstance(first[0], Paper)
+            is_note = bool(first) and isinstance(first[0], ResearchNote)
+            if is_paper:
+                papers = first
+                if len(args) >= 2 and isinstance(args[1], list):
+                    notes = args[1]
+                if len(args) >= 3:
+                    search_metadata = args[2]
+            elif is_note:
+                notes = first
+                if len(args) >= 2 and isinstance(args[1], list):
+                    papers = args[1]
+                if len(args) >= 3:
+                    search_metadata = args[2]
+
+        if not papers:
+            papers = []
+        if not notes:
+            notes = []
+
         matrix = self._build_matrix(notes, papers)
         findings = self._identify_findings(notes, papers, search_metadata)
         outline = self._propose_outline(findings)
@@ -190,17 +186,13 @@ class LiteratureSynthesisAgent:
             matrix=matrix,
             findings=findings,
             outline=outline,
-            synthesized_at=datetime.now(timezone.utc),
+            synthesis_matrix=matrix.to_markdown(),
+            synthesized_at=datetime.now(UTC),
         )
-
-    # ------------------------------------------------------------------
-    # Matrix construction
-    # ------------------------------------------------------------------
 
     def _build_matrix(
         self, notes: list[ResearchNote], papers: list[Paper]
     ) -> SynthesisMatrix:
-        """Build a comparison matrix across papers."""
         dimensions = [
             "Paper",
             "Year",
@@ -218,7 +210,7 @@ class LiteratureSynthesisAgent:
 
         rows = []
         for note in notes:
-            paper = paper_map.get(note.paper_id, None)
+            paper_map.get(note.paper_id)
             rows.append({
                 "Paper": note.title[:40],
                 "Year": note.year or "Unknown",
@@ -231,21 +223,14 @@ class LiteratureSynthesisAgent:
 
         return SynthesisMatrix(dimensions=dimensions, rows=rows)
 
-    # ------------------------------------------------------------------
-    # Finding identification
-    # ------------------------------------------------------------------
-
     def _identify_findings(
         self,
         notes: list[ResearchNote],
         papers: list[Paper],
-        search_metadata: dict | None = None,
+        search_metadata: dict[str, Any] | None = None,
     ) -> list[SynthesisFinding]:
-        """Identify consensus, contradictions, gaps, and emerging themes."""
         findings: list[SynthesisFinding] = []
-        paper_ids = [n.paper_id for n in notes]
 
-        # --- Consensus: papers with similar main results ---
         similar_results = self._find_consensus(notes)
         if similar_results:
             findings.append(SynthesisFinding(
@@ -257,7 +242,6 @@ class LiteratureSynthesisAgent:
                 evidence_base=f"Analysis of {len(notes)} papers reveals convergence on key findings.",
             ))
 
-        # --- Contradictions: papers with conflicting results ---
         contradictions = self._find_contradictions(notes)
         for label, group_a, group_b in contradictions:
             findings.append(SynthesisFinding(
@@ -270,7 +254,6 @@ class LiteratureSynthesisAgent:
                 evidence_base="Comparative analysis of conflicting findings.",
             ))
 
-        # --- Gaps: areas where insufficient evidence exists ---
         gaps = self._identify_gaps(notes, search_metadata)
         for gap in gaps:
             findings.append(SynthesisFinding(
@@ -283,7 +266,6 @@ class LiteratureSynthesisAgent:
                 notes="This gap claim is based on the current search results and may change as new evidence is found.",
             ))
 
-        # --- Emerging themes ---
         themes = self._identify_emerging_themes(notes)
         for theme in themes:
             findings.append(SynthesisFinding(
@@ -298,23 +280,18 @@ class LiteratureSynthesisAgent:
         return findings
 
     def _find_consensus(self, notes: list[ResearchNote]) -> list[str]:
-        """Find papers with similar main results."""
-        # Group papers by similarity of main results (simple keyword overlap)
         paper_ids: list[str] = []
         for note in notes:
             result = note.main_results
             if result and result != "Unknown" and len(result) > 20:
                 paper_ids.append(note.paper_id)
-        return paper_ids[:min(len(paper_ids), 10)]  # Limit to 10
+        return paper_ids[:min(len(paper_ids), 10)]
 
     def _find_contradictions(
         self, notes: list[ResearchNote]
     ) -> list[tuple[str, list[str], list[str]]]:
-        """Find pairs of papers with conflicting main results."""
         contradictions: list[tuple[str, list[str], list[str]]] = []
 
-        # Simple contradiction detection: compare results of papers
-        # with different methodologies or data sources
         for i, note_a in enumerate(notes):
             for j, note_b in enumerate(notes):
                 if i >= j:
@@ -324,8 +301,6 @@ class LiteratureSynthesisAgent:
                     and note_b.main_results != "Unknown"
                     and note_a.methodology != note_b.methodology
                 ):
-                    # Heuristic: if methodologies differ significantly,
-                    # flag as potential contradiction
                     contradictions.append((
                         f"Methodology difference: {note_a.methodology[:30]} vs {note_b.methodology[:30]}",
                         [note_a.paper_id],
@@ -338,47 +313,39 @@ class LiteratureSynthesisAgent:
     def _identify_gaps(
         self,
         notes: list[ResearchNote],
-        search_metadata: dict | None = None,
-    ) -> list[dict]:
-        """Identify evidence gaps.
+        search_metadata: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        gaps: list[dict[str, Any]] = []
 
-        Acceptance criterion: cannot present a research gap as established
-        without showing how the search supports that conclusion.
-        """
-        gaps = []
-
-        # If no search metadata, we cannot claim gaps are established
+        sm = search_metadata or {}
         has_search = bool(search_metadata)
         search_scope = ""
         if has_search:
             search_scope = (
-                f"Based on search with {search_metadata.get('queries', [])} "
-                f"across {search_metadata.get('sources', [])}. "
+                f"Based on search with {sm.get('queries', [])} "
+                f"across {sm.get('sources', [])}. "
             )
 
-        # Check for temporal gaps (papers clustered in time)
-        years = sorted([
-            n.year for n in notes if n.year is not None
-        ])
+        years = sorted([n.year for n in notes if n.year is not None])
         if len(years) >= 2:
             max_gap = 0
-            gap_between = (None, None)
+            gap_between: tuple[Any, Any] = (None, None)
             for i in range(len(years) - 1):
                 diff = years[i + 1] - years[i]
                 if diff > max_gap:
                     max_gap = diff
                     gap_between = (years[i], years[i + 1])
 
-            if max_gap >= 3 and has_search_metadata:
+            if max_gap >= 3 and has_search:
                 gaps.append({
                     "title": f"Temporal gap between {gap_between[0]} and {gap_between[1]}",
                     "description": f"No papers found in the literature between {gap_between[0]} and {gap_between[1]}. "
                                    f"{search_scope}This gap should be verified against the full search.",
                     "supporting_paper_ids": [],
                     "confidence": 0.4,
-                    "evidence_base": search_scope if has_search_metadata else "Search evidence not provided. Cannot verify this gap claim.",
+                    "evidence_base": search_scope if has_search else "Search evidence not provided. Cannot verify this gap claim.",
                 })
-            elif max_gap >= 3 and not has_search_metadata:
+            elif max_gap >= 3 and not has_search:
                 gaps.append({
                     "title": f"Potential temporal gap between {gap_between[0]} and {gap_between[1]}",
                     "description": f"Papers found span from {years[0]} to {years[-1]}. "
@@ -391,10 +358,8 @@ class LiteratureSynthesisAgent:
 
         return gaps
 
-    def _identify_emerging_themes(self, notes: list[ResearchNote]) -> list[dict]:
-        """Identify emerging themes across papers."""
-        # Look at common open questions and agent interpretations
-        themes: list[dict] = []
+    def _identify_emerging_themes(self, notes: list[ResearchNote]) -> list[dict[str, Any]]:
+        themes: list[dict[str, Any]] = []
         open_qs = [n.open_questions for n in notes if n.open_questions != "Unknown"]
 
         if len(open_qs) >= 2:
@@ -411,12 +376,7 @@ class LiteratureSynthesisAgent:
 
         return themes
 
-    # ------------------------------------------------------------------
-    # Outline generation
-    # ------------------------------------------------------------------
-
     def _propose_outline(self, findings: list[SynthesisFinding]) -> ProposedOutline:
-        """Generate a proposed section outline based on findings."""
         sections = [
             ProposedSection(
                 title="Introduction",
@@ -454,7 +414,6 @@ class LiteratureSynthesisAgent:
             ),
         ]
 
-        # Link findings to relevant sections
         finding_ids = [str(i) for i in range(len(findings))]
         for finding in findings:
             if finding.finding_type == SynthesisFindingType.CONSENSUS:
@@ -485,10 +444,11 @@ class SynthesisConfig(BaseModel):
 class SynthesisResult(BaseModel):
     """Result of a literature synthesis."""
 
-    matrix: SynthesisMatrix
-    findings: list[SynthesisFinding]
-    outline: ProposedOutline
-    synthesized_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    matrix: SynthesisMatrix | None = None
+    findings: list[SynthesisFinding] = Field(default_factory=list)
+    outline: ProposedOutline = Field(default_factory=lambda: ProposedOutline(title="Untitled"))
+    synthesis_matrix: str = Field(default="")
+    synthesized_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     def to_markdown(self) -> str:
         """Render the full synthesis result as Markdown."""
@@ -497,7 +457,7 @@ class SynthesisResult(BaseModel):
             f"**Synthesized at:** {self.synthesized_at.isoformat()}",
             "",
             "## Synthesis Matrix",
-            self.matrix.to_markdown(),
+            self.synthesis_matrix or (self.matrix.to_markdown() if self.matrix else "_No data in matrix._"),
             "",
             "## Synthesis Findings",
             "",
@@ -509,166 +469,4 @@ class SynthesisResult(BaseModel):
         lines.append("## Proposed Outline")
         lines.append(self.outline.to_markdown())
 
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
-
-class SynthesisResult(BaseModel):
-    """The result of a literature synthesis."""
-
-    findings: list[SynthesisFinding] = Field(default_factory=list)
-    outline: ProposedOutline = Field(default_factory=lambda: ProposedOutline(title=""))
-    synthesis_matrix: str = Field(
-        default="",
-        description="Markdown table comparing papers across key dimensions",
-    )
-
-
-class LiteratureSynthesisAgent:
-    """Agent that synthesizes findings across a set of research papers."""
-
-    def __init__(self) -> None:
-        pass
-
-    def synthesize(
-        self,
-        papers: list[Paper],
-        notes: list[ResearchNote],
-    ) -> SynthesisResult:
-        """Perform literature synthesis on the given papers and their notes."""
-        findings: list[SynthesisFinding] = []
-        paper_ids = [n.paper_id for n in notes]
-
-        # Identify consensus: papers that report similar main results
-        consensus_results = self._find_consensus(notes)
-        for desc, supporting in consensus_results:
-            findings.append(
-                SynthesisFinding(
-                    finding_type=SynthesisFindingType.CONSENSUS,
-                    title=f"Consensus: {desc}",
-                    description=desc,
-                    supporting_paper_ids=supporting,
-                    confidence=0.7,
-                )
-            )
-
-        # Identify contradictions
-        contradictions = self._find_contradictions(notes)
-        for desc, supporting, conflicting in contradictions:
-            findings.append(
-                SynthesisFinding(
-                    finding_type=SynthesisFindingType.CONTRADICTION,
-                    title=f"Contradiction: {desc}",
-                    description=desc,
-                    supporting_paper_ids=supporting,
-                    conflicting_paper_ids=conflicting,
-                    confidence=0.5,
-                    notes="Further investigation recommended",
-                )
-            )
-
-        # Identify evidence gaps
-        gaps = self._find_evidence_gaps(notes)
-        for desc in gaps:
-            findings.append(
-                SynthesisFinding(
-                    finding_type=SynthesisFindingType.GAP,
-                    title=f"Gap: {desc}",
-                    description=desc,
-                    confidence=0.6,
-                    notes="No direct evidence found in the reviewed literature",
-                )
-            )
-
-        # Build outline from findings
-        sections = [
-            ProposedSection(
-                title="Introduction",
-                description="Frame the review question and scope",
-            ),
-            ProposedSection(
-                title="Methods",
-                description="Describe search strategy and analysis approach",
-            ),
-            ProposedSection(
-                title="Synthesis Findings",
-                description="Present key findings organized by theme",
-                subsections=[f.title for f in findings],
-            ),
-            ProposedSection(
-                title="Discussion",
-                description="Interpret findings and discuss implications",
-            ),
-            ProposedSection(
-                title="Conclusion",
-                description="Summarize contributions and future directions",
-            ),
-        ]
-
-        return SynthesisResult(
-            findings=findings,
-            outline=ProposedOutline(
-                title="Synthesis Manuscript",
-                sections=sections,
-            ),
-            synthesis_matrix=self._build_matrix(notes),
-        )
-
-    def _find_consensus(self, notes: list[ResearchNote]) -> list[tuple[str, list[str]]]:
-        """Find areas where papers agree on main results."""
-        results: dict[str, list[str]] = {}
-        for note in notes:
-            main = note.main_results
-            if main and main != "Unknown":
-                # Simple keyword-based consensus detection
-                for keyword in ["improves", "effective", "significant", "positive", "reduces"]:
-                    if keyword in main.lower():
-                        results.setdefault(f"Papers report {keyword} effects", []).append(
-                            note.paper_id
-                        )
-        return [
-            (desc, pids)
-            for desc, pids in results.items()
-            if len(pids) >= 2
-        ]
-
-    def _find_contradictions(self, notes: list[ResearchNote]) -> list[tuple[str, list[str], list[str]]]:
-        """Find areas where papers disagree."""
-        positive: list[str] = []
-        negative: list[str] = []
-        for note in notes:
-            main = note.main_results
-            if main and main != "Unknown":
-                if any(w in main.lower() for w in ["positive", "improves", "effective"]):
-                    positive.append(note.paper_id)
-                elif any(w in main.lower() for w in ["negative", "worsens", "ineffective", "no effect"]):
-                    negative.append(note.paper_id)
-        if positive and negative:
-            return [
-                ("Conflicting effects on outcome", positive, negative)
-            ]
-        return []
-
-    def _find_evidence_gaps(self, notes: list[ResearchNote]) -> list[str]:
-        """Identify potential evidence gaps."""
-        gaps: list[str] = []
-        for note in notes:
-            if note.open_questions and note.open_questions != "Unknown":
-                gaps.append(note.open_questions)
-        return gaps[:5]  # Limit to top 5
-
-    def _build_matrix(self, notes: list[ResearchNote]) -> str:
-        """Build a synthesis matrix comparing papers."""
-        lines = [
-            "| Paper | Methodology | Main Results | Limitations |",
-            "|---|---|---|---|",
-        ]
-        for note in notes:
-            lines.append(
-                f"| {note.title} | {note.methodology[:30]} | {note.main_results[:30]} | {note.limitations[:30]} |"
-            )
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
         return "\n".join(lines)

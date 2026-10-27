@@ -114,7 +114,7 @@ class TestManuscriptWriter:
             papers=sample_papers,
         )
         assert isinstance(result.citations_used, dict)
-        for section_name, cited in result.citations_used.items():
+        for _section_name, cited in result.citations_used.items():
             assert isinstance(cited, list)
 
     def test_references_added(self, writer, sample_papers, sample_notes):

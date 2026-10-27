@@ -6,8 +6,11 @@ CSL-JSON, and other journal-specific citation formats.
 
 from __future__ import annotations
 
+import json
+from collections.abc import Callable
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -18,7 +21,7 @@ from .common import make_id, now_utc
 # ---------------------------------------------------------------------------
 
 
-class ReferenceFormat(str, Enum):
+class ReferenceFormat(StrEnum):
     """Supported bibliography export formats."""
 
     BIBTEX = "bibtex"
@@ -111,9 +114,9 @@ class ReferenceRecord(BaseModel):
         lines.append("}")
         return "\n".join(lines)
 
-    def to_csl_json(self) -> dict:
+    def to_csl_json(self) -> dict[str, Any]:
         """Export this reference as CSL-JSON."""
-        csl: dict = {
+        csl: dict[str, Any] = {
             "id": self.id,
             "title": self.title,
             "type": "article-journal",
@@ -121,7 +124,10 @@ class ReferenceRecord(BaseModel):
         }
         if self.authors:
             csl["author"] = [
-                {"family": a.split()[-1] if a else "", "given": " ".join(a.split()[:-1])}
+                {
+                    "family": a.split()[-1] if a else "",
+                    "given": " ".join(a.split()[:-1]),
+                }
                 for a in self.authors
             ]
         if self.year:
@@ -269,11 +275,7 @@ class Bibliography(BaseModel):
         seen: dict[str, list[str]] = {}
         for ref in self.references:
             seen.setdefault(ref.paper_id, []).append(ref.id)
-        return [
-            (ref_id, record_id)
-            for ref_id, record_ids in seen.items()
-            for record_id in record_ids[1:]
-        ]
+        return [(ref_id, record_id) for ref_id, record_ids in seen.items() for record_id in record_ids[1:]]
 
     def to_bibtex(self) -> str:
         """Export the entire bibliography as a BibTeX string."""
@@ -282,26 +284,22 @@ class Bibliography(BaseModel):
             entries.append(ref.to_bibtex())
         return "\n\n".join(entries)
 
-    def to_csl_json(self) -> list[dict]:
+    def to_csl_json(self) -> list[dict[str, Any]]:
         """Export the entire bibliography as CSL-JSON."""
         return [ref.to_csl_json() for ref in self.references]
 
     def to_format(self, fmt: ReferenceFormat) -> str:
         """Export the bibliography in a named format."""
-        format_map = {
+        format_map: dict[ReferenceFormat, Callable[[], str]] = {
             ReferenceFormat.BIBTEX: lambda: self.to_bibtex(),
-            ReferenceFormat.CSL_JSON: lambda: self.to_csl_json(),
-            ReferenceFormat.APA: lambda: "\n".join(
-                f"{i+1}. {ref.to_apa()}" for i, ref in enumerate(self.references)
-            ),
-            ReferenceFormat.MLA: lambda: "\n".join(
-                f"{i+1}. {ref.to_mla()}" for i, ref in enumerate(self.references)
-            ),
+            ReferenceFormat.CSL_JSON: lambda: json.dumps(self.to_csl_json()),
+            ReferenceFormat.APA: lambda: "\n".join(f"{i + 1}. {ref.to_apa()}" for i, ref in enumerate(self.references)),
+            ReferenceFormat.MLA: lambda: "\n".join(f"{i + 1}. {ref.to_mla()}" for i, ref in enumerate(self.references)),
             ReferenceFormat.CHICAGO: lambda: "\n".join(
-                f"{i+1}. {ref.to_chicago()}" for i, ref in enumerate(self.references)
+                f"{i + 1}. {ref.to_chicago()}" for i, ref in enumerate(self.references)
             ),
             ReferenceFormat.VANCOUR: lambda: "\n".join(
-                f"{i+1}. {ref.to_vancouver()}" for i, ref in enumerate(self.references)
+                f"{i + 1}. {ref.to_vancouver()}" for i, ref in enumerate(self.references)
             ),
         }
         return format_map[fmt]()
