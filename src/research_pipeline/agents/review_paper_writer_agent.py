@@ -18,5 +18,4 @@ class ReviewPaperWriterAgent(PipelineAgent):
         if self.manuscript:
             state.manuscript = self.manuscript
 
-        state.save("pipeline_state.json")
         return state

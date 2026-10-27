@@ -30,5 +30,4 @@ class RevisionReleaseAgent(PipelineAgent):
         if isinstance(self.published, bool):
             state.published = self.published
 
-        state.save("pipeline_state.json")
         return state

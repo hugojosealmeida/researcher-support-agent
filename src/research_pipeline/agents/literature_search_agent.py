@@ -25,5 +25,4 @@ class LiteratureSearchAgent(PipelineAgent):
         if self.excluded_papers:
             state.excluded_papers = self.excluded_papers
 
-        state.save("pipeline_state.json")
         return state

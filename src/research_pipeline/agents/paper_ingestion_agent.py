@@ -19,5 +19,4 @@ class PaperIngestionAgent(PipelineAgent):
         if self.papers:
             state.papers = self.papers
 
-        state.save("pipeline_state.json")
         return state
