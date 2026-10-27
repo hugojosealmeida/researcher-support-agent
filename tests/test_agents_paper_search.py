@@ -238,6 +238,18 @@ class TestEuropePMCAdapter:
         finally:
             os.environ.pop("EUROPEPMC_FIXTURE", None)
 
+    def test_string_and_list_titles(self):
+        adapter = EuropePMCAdapter()
+        assert adapter.normalize({"title": "Real Title"}).title == "Real Title"
+        assert adapter.normalize({"title": ["Real Title"]}).title == "Real Title"
+        assert adapter.normalize({"title": ""}) is None
+        assert adapter.normalize({"title": []}) is None
+
+    @pytest.mark.parametrize("title", [[], [None], [123], [None, "fallback"]])
+    def test_empty_or_non_string_list_titles_return_none(self, title):
+        adapter = EuropePMCAdapter()
+        assert adapter.normalize({"title": title}) is None
+
 
 class TestArxivAdapter:
     def test_normalize_fixture(self, arxiv_fixture):
