@@ -155,7 +155,8 @@ class ManuscriptWriter:
         for note in notes[:5]:
             if note.main_results and note.main_results != "Unknown":
                 key_findings.append(f"- {note.main_results[:100]}")
-                cited.add(note.paper_id)
+                if note.paper_id:
+                    cited.add(note.paper_id)
 
         abstract_lines = [
             "**Purpose:** This review synthesizes evidence from",
@@ -184,7 +185,8 @@ class ManuscriptWriter:
         """Write the introduction section."""
         cited: set[str] = set()
         first_cited = notes[0].paper_id if notes else ""
-        cited.add(first_cited)
+        if first_cited:
+            cited.add(first_cited)
 
         intro_lines = [
             "# Introduction",
@@ -211,7 +213,8 @@ class ManuscriptWriter:
         for note in notes:
             if note.methodology and note.methodology != "Unknown":
                 methods_used.append(note.methodology[:80])
-                cited.add(note.paper_id)
+                if note.paper_id:
+                    cited.add(note.paper_id)
 
         methods_lines = [
             "# Methods",
@@ -250,7 +253,8 @@ class ManuscriptWriter:
         for note in notes:
             if note.main_results and note.main_results != "Unknown":
                 findings.append((note.paper_id, note.main_results))
-                cited.add(note.paper_id)
+                if note.paper_id:
+                    cited.add(note.paper_id)
 
         result_lines = [
             "# Results",
@@ -278,7 +282,8 @@ class ManuscriptWriter:
         cited: set[str] = set()
         # Pick a representative paper
         representative = notes[0].paper_id if notes else ""
-        cited.add(representative)
+        if representative:
+            cited.add(representative)
 
         discussion_lines = [
             "# Discussion",
@@ -307,7 +312,7 @@ class ManuscriptWriter:
     ) -> tuple[str, list[str], list[str]]:
         """Write the conclusion section."""
         cited: set[str] = set()
-        if notes:
+        if notes and notes[0].paper_id:
             cited.add(notes[0].paper_id)
 
         conclusion_lines = [
