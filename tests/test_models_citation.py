@@ -1,6 +1,5 @@
 """Tests for citation and bibliography models."""
 
-
 from researcher_support_agent.models.citation import (
     Bibliography,
     DOIResolutionResult,

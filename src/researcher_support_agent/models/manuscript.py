@@ -1,86 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-"""Manuscript model."""
-
-from __future__ import annotations
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-from datetime import UTC, datetime
-from typing import Any
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-from .common import Status, generate_id
-
-
-class Manuscript(BaseModel):
-    """A draft or final review manuscript."""
-
-    model_config = ConfigDict(validate_default=True)
-
-    id: str = Field(default_factory=generate_id)
-    title: str = Field(..., min_length=1)
-    sections: dict[str, str] = Field(default_factory=dict)
-    status: Status = Status.PENDING
-    version: int = Field(default=1, ge=1)
-    references: list[str] = Field(default_factory=list)  # citation keys
-    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    metadata: dict[str, Any] = Field(default_factory=dict)
-
-    @field_validator("title")
-    @classmethod
-    def title_not_empty(cls, v: str) -> str:
-        if not v.strip():
-            raise ValueError("title must not be blank")
-        return v
-
-    def bump_version(self) -> None:
-        """Increment version and update timestamp."""
-        self.version += 1
-        self.updated_at = datetime.now(UTC)
-
-    def update_section(self, name: str, content: str) -> None:
-        """Update a section of the manuscript."""
-        self.sections[name] = content
-        self.updated_at = datetime.now(UTC)
-
-    def get_full_text(self) -> str:
-        """Return the manuscript as a single markdown string."""
-        parts: list[str] = []
-        for section_name, content in self.sections.items():
-            parts.append(f"## {section_name}\n\n{content}")
-        return "\n\n".join(parts)
-=======
-=======
->>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
-from typing import Dict, List, Optional
-
-from pydantic import BaseModel, Field
-
-
-class Manuscript(BaseModel):
-    """A research manuscript with sections and version tracking."""
-
-    sections: dict[str, str] = Field(
-        default_factory=dict, description="Section name -> Markdown content"
-    )
-    version: int = Field(default=1, ge=1)
-    references: list[str] = Field(default_factory=list)
-    metadata: dict = Field(default_factory=dict)
-
-    def bump_version(self) -> int:
-        """Increment the version number."""
-        self.version += 1
-        return self.version
-<<<<<<< HEAD
->>>>>>> e45cda7 (fix: Phase B — Literature discovery and ingestion (#3))
-=======
->>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 """Manuscript model with section templates, citation tracking, and versioning.
 
 Supports narrative reviews, systematic reviews, scoping reviews,
@@ -91,7 +8,7 @@ Citations resolve to known papers; references are never fabricated.
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -102,7 +19,7 @@ from .common import Status, now_utc
 # ---------------------------------------------------------------------------
 
 
-class ManuscriptTemplate(str, Enum):
+class ManuscriptTemplate(StrEnum):
     """Predefined manuscript section templates."""
 
     NARRATIVE_REVIEW = "narrative_review"
@@ -230,9 +147,7 @@ class SectionTemplate(BaseModel):
     """A template defining the purpose of a manuscript section."""
 
     name: str = Field(..., min_length=1, description="Section name (e.g., 'introduction')")
-    purpose: str = Field(
-        ..., min_length=1, description="Why this section exists in the manuscript"
-    )
+    purpose: str = Field(..., min_length=1, description="Why this section exists in the manuscript")
 
 
 class ManuscriptSection(BaseModel):
@@ -271,9 +186,7 @@ class Manuscript(BaseModel):
         default=ManuscriptTemplate.NARRATIVE_REVIEW,
         description="Section template to use",
     )
-    sections: dict[str, ManuscriptSection] = Field(
-        default_factory=dict, description="Section name -> section data"
-    )
+    sections: dict[str, ManuscriptSection] = Field(default_factory=dict, description="Section name -> section data")
     version: int = Field(default=1, ge=1)
     reference_ids: list[str] = Field(
         default_factory=list,
@@ -320,9 +233,7 @@ class Manuscript(BaseModel):
         self.sections[name] = section
         return section
 
-    def set_section_content(
-        self, name: str, content: str, citations: list[str] | None = None
-    ) -> None:
+    def set_section_content(self, name: str, content: str, citations: list[str] | None = None) -> None:
         """Set the content of a named section and record its citations."""
         if name not in self.sections:
             raise KeyError(f"Section '{name}' does not exist in this manuscript")
@@ -367,10 +278,7 @@ class Manuscript(BaseModel):
     def has_uncited_bibliography(self) -> bool:
         """Check if any bibliography entries are not cited in text."""
         cited = set(self.get_cited_paper_ids())
-        for rid in self.reference_ids:
-            if rid not in cited:
-                return True
-        return False
+        return any(rid not in cited for rid in self.reference_ids)
 
     # ------------------------------------------------------------------
     # Versioning
@@ -396,7 +304,3 @@ class Manuscript(BaseModel):
                 parts.append(section.content)
                 parts.append("")
         return "\n".join(parts)
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))

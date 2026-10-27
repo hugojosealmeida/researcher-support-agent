@@ -1,31 +1,28 @@
 """Tests for the Pipeline orchestrator."""
 
-import pytest
 from pathlib import Path
 
+import pytest
+
+from research_pipeline.agents import (
+    AcademicReviewerAgent,
+    LiteratureSearchAgent,
+    LiteratureSynthesisAgent,
+    PaperIngestionAgent,
+    PaperSummarizationAgent,
+    PlanningAgent,
+    ReviewPaperWriterAgent,
+    RevisionReleaseAgent,
+)
 from research_pipeline.pipeline import Pipeline
 from research_pipeline.state import (
     PipelineState,
-    SearchItem,
-    Paper,
-    Summary,
-    ReviewComment,
 )
-from research_pipeline.agents import (
-    PlanningAgent,
-    LiteratureSearchAgent,
-    PaperIngestionAgent,
-    PaperSummarizationAgent,
-    LiteratureSynthesisAgent,
-    ReviewPaperWriterAgent,
-    AcademicReviewerAgent,
-    RevisionReleaseAgent,
-)
-
 
 # ------------------------------------------------------------------ #
 #  Helpers — lightweight agents that just set state for testing        #
 # ------------------------------------------------------------------ #
+
 
 class _DummyAgent:
     """Minimal agent that writes to state for testing."""
@@ -43,6 +40,7 @@ class _DummyAgent:
 # ------------------------------------------------------------------ #
 #  Tests                                                               #
 # ------------------------------------------------------------------ #
+
 
 class TestPipelineRegistration:
     def test_register_and_run_phase(self, tmp_path: Path) -> None:

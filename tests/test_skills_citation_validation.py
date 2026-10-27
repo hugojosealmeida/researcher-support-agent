@@ -59,19 +59,24 @@ class TestCitationValidationSkill:
         assert any("not cited" in i.lower() for i in issues)
 
     def test_validate_bibliography_duplicates(self, skill):
-        bib = Bibliography()
-        r1 = bib.references
-        r2 = type("FakeRecord", (), {"paper_id": "p1", "id": "r1"})()
+        Bibliography()
+        type("FakeRecord", (), {"paper_id": "p1", "id": "r1"})()
         # Add a duplicate by directly appending (simulating bad state)
-        skill.bibliography.references.append(type("FakeRecord", (), {
-            "paper_id": "p1", "id": "r1", "title": "A", "authors": []
-        })())
-        skill.bibliography.references.append(type("FakeRecord", (), {
-            "paper_id": "p1", "id": "r2", "title": "B", "authors": []
-        })())
-        issues = skill._validate_bibliography_integrity(
-            Manuscript(title="Test")
+        skill.bibliography.references.append(
+            type(
+                "FakeRecord",
+                (),
+                {"paper_id": "p1", "id": "r1", "title": "A", "authors": []},
+            )()
         )
+        skill.bibliography.references.append(
+            type(
+                "FakeRecord",
+                (),
+                {"paper_id": "p1", "id": "r2", "title": "B", "authors": []},
+            )()
+        )
+        issues = skill._validate_bibliography_integrity(Manuscript(title="Test"))
         assert any("duplicate" in i for i in issues)
 
 

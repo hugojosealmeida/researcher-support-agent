@@ -1,29 +1,27 @@
 """Tests for all 8 pipeline agents."""
 
-import pytest
-
-from research_pipeline.state import (
-    PipelineState,
-    SearchItem,
-    Paper,
-    Summary,
-    ReviewComment,
-)
 from research_pipeline.agents import (
-    PlanningAgent,
+    AcademicReviewerAgent,
     LiteratureSearchAgent,
+    LiteratureSynthesisAgent,
     PaperIngestionAgent,
     PaperSummarizationAgent,
-    LiteratureSynthesisAgent,
+    PlanningAgent,
     ReviewPaperWriterAgent,
-    AcademicReviewerAgent,
     RevisionReleaseAgent,
 )
-
+from research_pipeline.state import (
+    Paper,
+    PipelineState,
+    ReviewComment,
+    SearchItem,
+    Summary,
+)
 
 # ------------------------------------------------------------------ #
 #  PlanningAgent                                                       #
 # ------------------------------------------------------------------ #
+
 
 class TestPlanningAgent:
     def test_empty_agent_leaves_state_unchanged(self) -> None:
@@ -58,6 +56,7 @@ class TestPlanningAgent:
 #  LiteratureSearchAgent                                               #
 # ------------------------------------------------------------------ #
 
+
 class TestLiteratureSearchAgent:
     def test_agent_sets_results(self) -> None:
         papers = [
@@ -78,9 +77,7 @@ class TestLiteratureSearchAgent:
         assert len(result.excluded_papers) == 1
 
     def test_agent_preserves_existing_search_results(self) -> None:
-        state = PipelineState(
-            search_results=[SearchItem(title="Old", authors=[], year=2019, venue="V")]
-        )
+        state = PipelineState(search_results=[SearchItem(title="Old", authors=[], year=2019, venue="V")])
         agent = LiteratureSearchAgent()
         result = agent.run(state)
         assert len(result.search_results) == 1
@@ -90,6 +87,7 @@ class TestLiteratureSearchAgent:
 # ------------------------------------------------------------------ #
 #  PaperIngestionAgent                                                 #
 # ------------------------------------------------------------------ #
+
 
 class TestPaperIngestionAgent:
     def test_agent_sets_papers(self) -> None:
@@ -111,6 +109,7 @@ class TestPaperIngestionAgent:
 # ------------------------------------------------------------------ #
 #  PaperSummarizationAgent                                             #
 # ------------------------------------------------------------------ #
+
 
 class TestPaperSummarizationAgent:
     def test_agent_sets_summaries(self) -> None:
@@ -139,6 +138,7 @@ class TestPaperSummarizationAgent:
 #  LiteratureSynthesisAgent                                            #
 # ------------------------------------------------------------------ #
 
+
 class TestLiteratureSynthesisAgent:
     def test_agent_sets_synthesis(self) -> None:
         synthesis = {
@@ -160,6 +160,7 @@ class TestLiteratureSynthesisAgent:
 #  ReviewPaperWriterAgent                                              #
 # ------------------------------------------------------------------ #
 
+
 class TestReviewPaperWriterAgent:
     def test_agent_sets_manuscript(self) -> None:
         manuscript = "# Introduction\n\nSome text..."
@@ -177,6 +178,7 @@ class TestReviewPaperWriterAgent:
 # ------------------------------------------------------------------ #
 #  AcademicReviewerAgent                                               #
 # ------------------------------------------------------------------ #
+
 
 class TestAcademicReviewerAgent:
     def test_agent_sets_comments_and_passed(self) -> None:
@@ -205,6 +207,7 @@ class TestAcademicReviewerAgent:
 # ------------------------------------------------------------------ #
 #  RevisionReleaseAgent                                                #
 # ------------------------------------------------------------------ #
+
 
 class TestRevisionReleaseAgent:
     def test_agent_sets_final(self) -> None:

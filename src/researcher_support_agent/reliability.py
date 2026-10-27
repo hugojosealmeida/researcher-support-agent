@@ -15,8 +15,9 @@ import hashlib
 import json
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from .logging_config import get_logger
 
@@ -28,6 +29,7 @@ T = TypeVar("T")
 # ---------------------------------------------------------------------------
 # Retry policy
 # ---------------------------------------------------------------------------
+
 
 class RetryableError(Exception):
     """Error that should be retried (transient)."""
@@ -67,7 +69,7 @@ class RetryPolicy:
         last_exc: Exception | None = None
         for attempt in range(1, self.max_retries + 1):
             try:
-                return fn(*args, **kwargs)  # type: ignore[return-value]
+                return fn(*args, **kwargs)
             except NonRetryableError:
                 raise
             except self.retryable_exceptions as exc:
@@ -93,16 +95,15 @@ class RetryPolicy:
                     )
             except Exception as exc:
                 # Non-expected exceptions are treated as non-retryable
-                raise NonRetryableError(
-                    f"Unexpected error (non-retryable): {exc}"
-                ) from exc
+                raise NonRetryableError(f"Unexpected error (non-retryable): {exc}") from exc
         assert last_exc is not None
-        raise last_exc  # type: ignore[misc]
+        raise last_exc
 
 
 # ---------------------------------------------------------------------------
 # Rate limiter (token bucket)
 # ---------------------------------------------------------------------------
+
 
 class RateLimiter:
     """Simple token-bucket rate limiter for API calls.
@@ -123,9 +124,7 @@ class RateLimiter:
         self._refill()
         if self._tokens < 1.0:
             wait_time = (1.0 - self._tokens) / self.refill_rate
-            logger.info(
-                "rate_limiter_throttling wait=%.3fs", wait_time
-            )
+            logger.info("rate_limiter_throttling wait=%.3fs", wait_time)
             time.sleep(wait_time)
             self._refill()
         self._tokens -= 1.0
@@ -140,6 +139,7 @@ class RateLimiter:
 # ---------------------------------------------------------------------------
 # Per-paper error isolation
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class PaperResult:
@@ -193,7 +193,7 @@ def process_papers_isolated(
                     pid,
                 )
                 # Mark remaining papers as skipped
-                remaining = papers[len(results):]
+                remaining = papers[len(results) :]
                 for p in remaining:
                     results.append(
                         PaperResult(
@@ -212,7 +212,7 @@ def process_papers_isolated(
                     max_failures,
                     pid,
                 )
-                remaining = papers[len(results):]
+                remaining = papers[len(results) :]
                 for p in remaining:
                     results.append(
                         PaperResult(
@@ -230,17 +230,27 @@ def process_papers_isolated(
 # Token / cost tracking
 # ---------------------------------------------------------------------------
 
+
 class TokenTracker:
     """Track API token usage and approximate cost.
 
     Args:
         token_cost_per_million: Cost in USD per million output tokens.
+        input_cost_per_million: Cost in USD per million input tokens.
+            Defaults to ``token_cost_per_million`` when not provided.
     """
 
-    def __init__(self, token_cost_per_million: float = 0.0) -> None:
+    def __init__(
+        self,
+        token_cost_per_million: float = 0.0,
+        input_cost_per_million: float | None = None,
+    ) -> None:
         self.input_tokens: int = 0
         self.output_tokens: int = 0
         self.token_cost_per_million = token_cost_per_million
+        self.input_cost_per_million = (
+            token_cost_per_million if input_cost_per_million is None else input_cost_per_million
+        )
 
     def record_input(self, tokens: int) -> None:
         """Record input tokens used."""
@@ -264,10 +274,13 @@ class TokenTracker:
 
     @property
     def estimated_cost(self) -> float:
-        """Estimate cost in USD."""
-        if self.token_cost_per_million <= 0:
-            return 0.0
-        return (self.output_tokens / 1_000_000) * self.token_cost_per_million
+        """Estimate cost in USD, accounting for both input and output tokens."""
+        cost = 0.0
+        if self.input_cost_per_million > 0:
+            cost += (self.input_tokens / 1_000_000) * self.input_cost_per_million
+        if self.token_cost_per_million > 0:
+            cost += (self.output_tokens / 1_000_000) * self.token_cost_per_million
+        return cost
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -282,6 +295,7 @@ class TokenTracker:
 # PDF text sanitization
 # ---------------------------------------------------------------------------
 
+
 def sanitize_pdf_text(text: str) -> str:
     """Sanitize PDF-extracted text to prevent prompt injection / instruction leakage.
 
@@ -294,9 +308,7 @@ def sanitize_pdf_text(text: str) -> str:
         return ""
 
     # Remove control characters except common whitespace
-    cleaned = "".join(
-        ch for ch in text if ch in "\n\r\t" or (ch >= " " and ch < "\x7f")
-    )
+    cleaned = "".join(ch for ch in text if ch in "\n\r\t" or (ord(ch) >= 0x20 and ord(ch) != 0x7F))
 
     # Strip known instruction-injection patterns (case-insensitive)
     injection_patterns = [
@@ -394,16 +406,17 @@ def load_checkpoint(project_id: str, checkpoint_dir: str | None = None) -> Check
     if os.path.exists(path):
         with open(path) as f:
             data = json.load(f)
+        checkpoint = Checkpoint.from_dict(data)
+        if checkpoint.project_id != project_id:
+            raise ValueError(f"Checkpoint project_id mismatch: expected {project_id!r}, got {checkpoint.project_id!r}")
         logger.info("checkpoint_loaded project=%s", project_id)
-        return Checkpoint.from_dict(data)
+        return checkpoint
     checkpoint = Checkpoint(project_id=project_id)
     save_checkpoint(checkpoint, checkpoint_dir)
     return checkpoint
 
 
-def save_checkpoint(
-    checkpoint: Checkpoint, checkpoint_dir: str | None = None
-) -> None:
+def save_checkpoint(checkpoint: Checkpoint, checkpoint_dir: str | None = None) -> None:
     """Write the checkpoint to disk."""
     base = checkpoint_dir or os.getcwd()
     path = os.path.join(base, CHECKPOINT_FILE)
@@ -415,6 +428,7 @@ def save_checkpoint(
 # ---------------------------------------------------------------------------
 # PDF checksum cache
 # ---------------------------------------------------------------------------
+
 
 def compute_pdf_checksum(pdf_path: str) -> str:
     """Compute SHA-256 checksum of a PDF file."""

@@ -1,107 +1,14 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-"""Shared test fixtures."""
-
-import pytest
-from pathlib import Path
-
-from research_pipeline.state import PipelineState, SearchItem, Paper, Summary
-
-
-@pytest.fixture()
-def state_file(tmp_path: Path) -> Path:
-    """Return a path to a temp JSON file for state persistence tests."""
-    return tmp_path / "pipeline_state.json"
-
-
-@pytest.fixture()
-def sample_search_item() -> SearchItem:
-    return SearchItem(
-        title="Sample Paper",
-        authors=["A. Author"],
-        year=2024,
-        venue="Test Journal",
-        doi="10.1234/sample",
-        abstract="A test abstract.",
-    )
-
-
-@pytest.fixture()
-def sample_paper() -> Paper:
-    return Paper(
-        title="Sample Paper",
-        authors=["A. Author"],
-        year=2024,
-        venue="Test Journal",
-        doi="10.1234/sample",
-        md_path="/tmp/sample.md",
-        content="# Sample\n\nContent.",
-    )
-
-
-@pytest.fixture()
-def sample_summary() -> Summary:
-    return Summary(
-        title="Sample Paper",
-        doi="10.1234/sample",
-        key_findings=["Finding A"],
-        methods=["Method B"],
-        limitations=["Limit C"],
-    )
-=======
-"""Test conftest — shared fixtures."""
-
-from pathlib import Path
-from tempfile import TemporaryDirectory
-
-=======
-=======
->>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
-"""Test fixtures and conftest."""
-
-import os
-import tempfile
-from pathlib import Path
-
-<<<<<<< HEAD
->>>>>>> e45cda7 (fix: Phase B — Literature discovery and ingestion (#3))
-=======
->>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 """Test fixtures and conftest."""
 
 import tempfile
 from pathlib import Path
 
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 import pytest
+
+from research_pipeline.state import Paper, SearchItem, Summary
 
 
 @pytest.fixture()
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-def tmp_dir() -> Path:
-    """A temporary directory that is cleaned up after the test."""
-    with TemporaryDirectory() as td:
-        yield Path(td)
->>>>>>> 2ff0702 (fix: Phase A — Foundation and architecture (#2))
-=======
-=======
->>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 def tmp_dir():
     """Provide a temporary directory for tests."""
     with tempfile.TemporaryDirectory() as td:
@@ -145,22 +52,14 @@ def openalex_fixture(tmp_path: Path) -> Path:
                         "author": {
                             "display_name": "Alice Smith",
                             "orcid": "https://orcid.org/0000-0001-2345-6789",
-                            "affiliations": [
-                                {
-                                    "institution": {
-                                        "display_name": "University of Example"
-                                    }
-                                }
-                            ],
+                            "affiliations": [{"institution": {"display_name": "University of Example"}}],
                         }
                     },
                     {"author": {"display_name": "Bob Jones"}},
                 ],
                 "doi": "https://doi.org/10.1234/example",
                 "publication_date": "2023-06-15",
-                "primary_location": {
-                    "source": {"display_name": "Journal of ML"}
-                },
+                "primary_location": {"source": {"display_name": "Journal of ML"}},
                 "abstract_inverted_index": {
                     "deep": [0],
                     "learning": [1],
@@ -173,9 +72,7 @@ def openalex_fixture(tmp_path: Path) -> Path:
                 "authorships": [{"author": {"display_name": "Carol White"}}],
                 "doi": "https://doi.org/10.5678/health",
                 "publication_date": "2024-01-10",
-                "primary_location": {
-                    "source": {"display_name": "Health AI Journal"}
-                },
+                "primary_location": {"source": {"display_name": "Health AI Journal"}},
                 "abstract_inverted_index": None,
             },
         ]
@@ -258,11 +155,7 @@ def europe_pmc_fixture(tmp_path: Path) -> Path:
                     "pmcid": "PMC1234568",
                     "doi": "10.1186/example2",
                     "title": ["Gene Expression Analysis"],
-                    "authorList": {
-                        "author": [
-                            {"forename": "Iris", "surname": "Wang"}
-                        ]
-                    },
+                    "authorList": {"author": [{"forename": "Iris", "surname": "Wang"}]},
                     "publishDate": "2024-02-15",
                     "journalTitle": "Genome Research",
                     "abstractText": "",
@@ -305,13 +198,45 @@ def arxiv_fixture(tmp_path: Path) -> Path:
 
     fixture_path.write_text(json.dumps(data))
     return fixture_path
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> e45cda7 (fix: Phase B — Literature discovery and ingestion (#3))
-=======
->>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
-=======
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
+
+
+@pytest.fixture()
+def state_file(tmp_path: Path) -> Path:
+    """Return a path to a temp JSON file for state persistence tests."""
+    return tmp_path / "pipeline_state.json"
+
+
+@pytest.fixture()
+def sample_search_item() -> SearchItem:
+    return SearchItem(
+        title="Sample Paper",
+        authors=["A. Author"],
+        year=2024,
+        venue="Test Journal",
+        doi="10.1234/sample",
+        abstract="A test abstract.",
+    )
+
+
+@pytest.fixture()
+def sample_paper() -> Paper:
+    return Paper(
+        title="Sample Paper",
+        authors=["A. Author"],
+        year=2024,
+        venue="Test Journal",
+        doi="10.1234/sample",
+        md_path="/tmp/sample.md",
+        content="# Sample\n\nContent.",
+    )
+
+
+@pytest.fixture()
+def sample_summary() -> Summary:
+    return Summary(
+        title="Sample Paper",
+        doi="10.1234/sample",
+        key_findings=["Finding A"],
+        methods=["Method B"],
+        limitations=["Limit C"],
+    )

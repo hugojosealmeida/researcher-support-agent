@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from research_pipeline.agent_base import PipelineAgent
-from research_pipeline.state import PipelineState, Paper
+from research_pipeline.state import Paper, PipelineState
 
 
 class PaperIngestionAgent(PipelineAgent):

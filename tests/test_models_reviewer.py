@@ -263,8 +263,8 @@ class TestReviewCriteria:
         assert c.requires_human_approval(r) is False
 
     def test_max_iterations_range(self):
-        with pytest.raises(Exception):  # Pydantic validation
+        with pytest.raises(ValueError):  # Pydantic validation
             ReviewCriteria(max_iterations=0)
 
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             ReviewCriteria(max_iterations=51)

@@ -54,9 +54,7 @@ class Pipeline:
 
     # ---- execution ---- #
 
-    def run_phase(
-        self, phase_name: str, state: PipelineState | None = None
-    ) -> PipelineState:
+    def run_phase(self, phase_name: str, state: PipelineState | None = None) -> PipelineState:
         """Run a single named phase.
 
         Parameters
@@ -73,10 +71,7 @@ class Pipeline:
             The updated state after the phase completes.
         """
         if phase_name not in self.VALID_PHASES:
-            raise ValueError(
-                f"Unknown phase '{phase_name}'. "
-                f"Valid phases: {self.VALID_PHASES}"
-            )
+            raise ValueError(f"Unknown phase '{phase_name}'. Valid phases: {self.VALID_PHASES}")
 
         if state is not None:
             self._state = state
@@ -120,10 +115,7 @@ class Pipeline:
             self._state = state
 
         if phase_name not in self.VALID_PHASES:
-            raise ValueError(
-                f"Unknown phase '{phase_name}'. "
-                f"Valid phases: {self.VALID_PHASES}"
-            )
+            raise ValueError(f"Unknown phase '{phase_name}'. Valid phases: {self.VALID_PHASES}")
 
         start_idx = self.VALID_PHASES.index(phase_name)
         for phase_name in self.VALID_PHASES[start_idx:]:

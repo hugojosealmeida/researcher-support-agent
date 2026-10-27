@@ -14,7 +14,7 @@ Each finding includes location, severity, rationale, evidence, and suggested cor
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
@@ -25,7 +25,7 @@ from .common import make_id, now_utc
 # ---------------------------------------------------------------------------
 
 
-class Severity(str, Enum):
+class Severity(StrEnum):
     """Severity of a review finding."""
 
     CRITICAL = "critical"
@@ -34,7 +34,7 @@ class Severity(str, Enum):
     SUGGESTION = "suggestion"
 
 
-class ReviewPass(str, Enum):
+class ReviewPass(StrEnum):
     """Review passes performed by the academic reviewer."""
 
     ABSTRACT = "abstract"
@@ -139,7 +139,11 @@ class ReviewReport(BaseModel):
 
     def to_markdown(self) -> str:
         """Render the review report as Markdown."""
-        lines = [f"# Review Report: {self.title}", f"Date: {self.review_date.strftime('%Y-%m-%d')}", ""]
+        lines = [
+            f"# Review Report: {self.title}",
+            f"Date: {self.review_date.strftime('%Y-%m-%d')}",
+            "",
+        ]
 
         # Summary
         total = len(self.findings)
@@ -188,7 +192,9 @@ class ReviewCriteria(BaseModel):
         description="Severities that require human approval before acceptance",
     )
     max_iterations: int = Field(
-        default=5, ge=1, le=50,
+        default=5,
+        ge=1,
+        le=50,
         description="Maximum number of revision+review cycles",
     )
     require_all_critical_resolved: bool = Field(
@@ -212,9 +218,6 @@ class ReviewCriteria(BaseModel):
         if self.require_all_major_resolved and major:
             return False
         # Check against max_severity_to_accept
-        acceptable_severities = {
-            Severity.CRITICAL, Severity.MAJOR, Severity.MINOR, Severity.SUGGESTION
-        }
         too_high = self.max_severity_to_accept
         severity_order = {
             Severity.SUGGESTION: 0,
@@ -223,15 +226,9 @@ class ReviewCriteria(BaseModel):
             Severity.CRITICAL: 3,
         }
         threshold = severity_order.get(too_high, 1)
-        for f in unresolved:
-            if severity_order.get(f.severity, 99) > threshold:
-                return False
-        return True
+        return all(severity_order.get(f.severity, 99) <= threshold for f in unresolved)
 
     def requires_human_approval(self, report: ReviewReport) -> bool:
         """Check if human approval is needed before accepting."""
         unresolved = report.get_unresolved()
-        for f in unresolved:
-            if f.severity in self.require_human_approval_for:
-                return True
-        return False
+        return any(f.severity in self.require_human_approval_for for f in unresolved)

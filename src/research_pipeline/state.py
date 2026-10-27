@@ -11,6 +11,7 @@ from typing import Any, ClassVar
 @dataclass
 class SearchItem:
     """One result from the literature search."""
+
     title: str
     authors: list[str]
     year: int
@@ -24,6 +25,7 @@ class SearchItem:
 @dataclass
 class Paper:
     """A downloaded paper in structured markdown form."""
+
     title: str
     authors: list[str]
     year: int
@@ -37,6 +39,7 @@ class Paper:
 @dataclass
 class Summary:
     """Evidence-grounded summary of one paper."""
+
     title: str
     doi: str | None = None
     key_findings: list[str] = field(default_factory=list)
@@ -48,8 +51,9 @@ class Summary:
 @dataclass
 class ReviewComment:
     """A single comment from the academic reviewer."""
+
     section: str
-    severity: str          # "critical", "major", "minor"
+    severity: str  # "critical", "major", "minor"
     comment: str
     suggested_fix: str = ""
 
@@ -120,10 +124,7 @@ class PipelineState:
             val = getattr(self, key)
             # Serialize domain objects as dicts
             if isinstance(val, (list, tuple)):
-                data[key] = [
-                    _serialize(item) if not isinstance(item, dict) else item
-                    for item in val
-                ]
+                data[key] = [_serialize(item) if not isinstance(item, dict) else item for item in val]
             elif isinstance(val, dict):
                 data[key] = val
             elif not isinstance(val, (str, int, float, bool)) and val is not None:
@@ -149,8 +150,11 @@ class PipelineState:
     # Phase-name → attribute mapping
     _PHASE_ATTRIBUTES: ClassVar[dict[str, list[str]]] = {
         "planning": [
-            "topic", "research_questions", "scope",
-            "inclusion_criteria", "search_strategy",
+            "topic",
+            "research_questions",
+            "scope",
+            "inclusion_criteria",
+            "search_strategy",
         ],
         "literature_search": ["search_results", "excluded_papers"],
         "paper_ingestion": ["papers"],
@@ -164,17 +168,14 @@ class PipelineState:
     def phase_has_data(self, phase_name: str) -> bool:
         """Return ``True`` if the state already has results for *phase_name*."""
         attrs = self._PHASE_ATTRIBUTES.get(phase_name, [])
-        return any(
-            getattr(self, attr)
-            for attr in attrs
-            if isinstance(getattr(self, attr), (list, dict, str))
-        )
+        return any(getattr(self, attr) for attr in attrs if isinstance(getattr(self, attr), (list, dict, str)))
 
     def get_phase_order(self) -> list[str]:
         return list(self._phase_order)
 
 
 # ---- serialization helpers ---- #
+
 
 def _serialize(obj: Any) -> Any:
     """Recursively turn a dataclass / object into a JSON-safe dict."""

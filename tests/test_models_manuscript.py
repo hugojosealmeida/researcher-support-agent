@@ -1,53 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-"""Tests for manuscript model."""
-
-import pytest
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-from researcher_support_agent.models import Manuscript
-
-
-class TestManuscript:
-    def test_valid_creation(self):
-        m = Manuscript(title="Draft Title")
-        assert m.title == "Draft Title"
-        assert m.version == 1
-
-    def test_empty_title_raises(self):
-        with pytest.raises(ValueError):
-            Manuscript(title="")
-
-    def test_update_section(self):
-        m = Manuscript(title="Title")
-        m.update_section("introduction", "This is the intro.")
-        assert "introduction" in m.sections
-
-    def test_bump_version(self):
-        m = Manuscript(title="Title")
-        m.bump_version()
-        assert m.version == 2
-
-    def test_get_full_text(self):
-        m = Manuscript(title="Title")
-        m.update_section("introduction", "Intro text")
-        m.update_section("methods", "Methods text")
-        full = m.get_full_text()
-        assert "## introduction" in full
-        assert "Intro text" in full
-        assert "## methods" in full
-
-    def test_empty_sections(self):
-        m = Manuscript(title="Title")
-        assert m.get_full_text() == ""
-=======
-=======
->>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
-from researcher_support_agent.models.manuscript import Manuscript
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 """Tests for manuscript model with section templates and citation tracking."""
 
 import pytest
@@ -125,50 +75,10 @@ class TestManuscriptTemplate:
             sections = template.get_sections()
             for section in sections:
                 assert section.purpose and len(section.purpose) > 0
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
 
 
 class TestManuscript:
     def test_minimal(self):
-<<<<<<< HEAD
-<<<<<<< HEAD
-        m = Manuscript()
-        assert m.sections == {}
-        assert m.version == 1
-        assert m.references == []
-
-    def test_with_content(self):
-        m = Manuscript(
-            sections={"intro": "# Introduction\n\nThis is the intro."},
-            version=2,
-            references=["ref1", "ref2"],
-        )
-        assert m.sections["intro"] == "# Introduction\n\nThis is the intro."
-        assert m.version == 2
-        assert len(m.references) == 2
-
-    def test_bump_version(self):
-        m = Manuscript()
-        for expected in [2, 3, 4]:
-            new_v = m.bump_version()
-            assert new_v == expected
-            assert m.version == expected
-
-    def test_validation_min_version(self):
-        from pydantic import ValidationError
-
-        with pytest.raises(ValidationError):
-            Manuscript(version=0)
-<<<<<<< HEAD
->>>>>>> e45cda7 (fix: Phase B — Literature discovery and ingestion (#3))
-=======
->>>>>>> 1123db3 (fix: Phase C — Evidence extraction and synthesis (#4))
-=======
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
         m = Manuscript(title="Test Manuscript")
         assert m.title == "Test Manuscript"
         assert m.sections == {}
@@ -261,7 +171,3 @@ class TestManuscript:
         # Now cite p1
         m.set_section_content("abstract", "Content.", citations=["p1"])
         assert m.has_uncited_bibliography() is False
-<<<<<<< HEAD
->>>>>>> 10d6757 (fix: Phase D — Manuscript production and quality control (#5))
-=======
->>>>>>> 3eda405 (fix: Phase E — Reliability, Git integration and release (#6))
