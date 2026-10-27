@@ -134,7 +134,9 @@ def convert_pdf(
     # Determine output filename
     filename = f"{slugify(Path(pdf_path).stem)}.md"
     if output_dir:
-        output_path = Path(output_dir) / filename
+        out_dir = Path(output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        output_path = out_dir / filename
         output_path.write_text(text, encoding="utf-8")
 
     return PDFConversionResult(
